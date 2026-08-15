@@ -2,13 +2,7 @@ import os
 from functools import wraps
 
 def with_env_var(var_name, value):
-\
-\
-\
-\
-\
-\
-       
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

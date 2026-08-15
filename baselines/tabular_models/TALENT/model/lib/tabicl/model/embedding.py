@@ -13,48 +13,7 @@ from .inference_config import MgrConfig
 
 
 class ColEmbedding(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -94,21 +53,7 @@ class ColEmbedding(nn.Module):
 
     @staticmethod
     def map_feature_shuffle(reference_pattern: List[int], other_pattern: List[int]) -> List[int]:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         orig_to_other = {feature: idx for idx, feature in enumerate(other_pattern)}
         mapping = [orig_to_other[feature] for feature in reference_pattern]
@@ -116,85 +61,43 @@ class ColEmbedding(nn.Module):
         return mapping
 
     def _compute_embeddings(self, features: Tensor, train_size: Optional[int] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
 
-        src = self.in_linear(features)                              
+
+        src = self.in_linear(features)
         src = self.tf_col(src, train_size)
-        weights = self.ln_w(self.out_w(src))               
-        biases = self.ln_b(self.out_b(src))               
+        weights = self.ln_w(self.out_w(src))
+        biases = self.ln_b(self.out_b(src))
         embeddings = features * weights + biases
 
         return embeddings
 
     def _train_forward(self, X: Tensor, d: Optional[Tensor] = None, train_size: Optional[int] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if self.reserve_cls_tokens > 0:
-                                                                                                         
+
             X = nn.functional.pad(X, (self.reserve_cls_tokens, 0), value=-100.0)
 
         if d is None:
-            features = X.transpose(1, 2).unsqueeze(-1)                  
-            embeddings = self._compute_embeddings(features, train_size)                  
+            features = X.transpose(1, 2).unsqueeze(-1)
+            embeddings = self._compute_embeddings(features, train_size)
         else:
             if self.reserve_cls_tokens > 0:
                 d = d + self.reserve_cls_tokens
 
             B, T, HC = X.shape
             device = X.device
-            X = X.transpose(1, 2)               
+            X = X.transpose(1, 2)
 
             indices = torch.arange(HC, device=device).unsqueeze(0).expand(B, HC)
-            mask = indices < d.unsqueeze(1)                                            
-            features = X[mask].unsqueeze(-1)                           
-            effective_embeddings = self._compute_embeddings(features, train_size)             
+            mask = indices < d.unsqueeze(1)
+            features = X[mask].unsqueeze(-1)
+            effective_embeddings = self._compute_embeddings(features, train_size)
 
             embeddings = torch.zeros(B, HC, T, self.embed_dim, device=device)
-            embeddings[mask] = effective_embeddings                                   
+            embeddings[mask] = effective_embeddings
 
-        return embeddings.transpose(1, 2)                  
+        return embeddings.transpose(1, 2)
 
     def _inference_forward(
         self,
@@ -203,37 +106,8 @@ class ColEmbedding(nn.Module):
         feature_shuffles: Optional[List[List[int]]] = None,
         mgr_config: MgrConfig = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-                                        
+
+
         if mgr_config is None:
             mgr_config = MgrConfig(
                 min_batch_size=1,
@@ -247,32 +121,32 @@ class ColEmbedding(nn.Module):
         self.inference_mgr.configure(**mgr_config)
 
         if feature_shuffles is None:
-                                   
+
             if self.reserve_cls_tokens > 0:
-                                                                                                             
+
                 X = nn.functional.pad(X, (self.reserve_cls_tokens, 0), value=-100.0)
 
-            features = X.transpose(1, 2).unsqueeze(-1)                  
+            features = X.transpose(1, 2).unsqueeze(-1)
             embeddings = self.inference_mgr(
                 self._compute_embeddings, inputs=OrderedDict([("features", features), ("train_size", train_size)])
-            )                  
+            )
         else:
             B = X.shape[0]
-                                                                                     
+
             first_table = X[0]
             if self.reserve_cls_tokens > 0:
-                                                                                                             
+
                 first_table = nn.functional.pad(first_table, (self.reserve_cls_tokens, 0), value=-100.0)
 
-            features = first_table.transpose(0, 1).unsqueeze(-1)               
+            features = first_table.transpose(0, 1).unsqueeze(-1)
             first_embeddings = self.inference_mgr(
                 self._compute_embeddings,
                 inputs=OrderedDict([("features", features), ("train_size", train_size)]),
                 output_repeat=B,
-            )               
+            )
 
-                                                           
-            embeddings = first_embeddings.unsqueeze(0).repeat(B, 1, 1, 1)                  
+
+            embeddings = first_embeddings.unsqueeze(0).repeat(B, 1, 1, 1)
             first_pattern = feature_shuffles[0]
             for i in range(1, B):
                 mapping = self.map_feature_shuffle(first_pattern, feature_shuffles[i])
@@ -281,7 +155,7 @@ class ColEmbedding(nn.Module):
                     mapping = list(range(self.reserve_cls_tokens)) + mapping
                 embeddings[i] = first_embeddings[mapping]
 
-        return embeddings.transpose(1, 2)                  
+        return embeddings.transpose(1, 2)
 
     def forward(
         self,
@@ -291,43 +165,11 @@ class ColEmbedding(nn.Module):
         feature_shuffles: Optional[List[List[int]]] = None,
         mgr_config: MgrConfig = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if self.training:
             embeddings = self._train_forward(X, d, train_size)
         else:
             embeddings = self._inference_forward(X, train_size, feature_shuffles, mgr_config)
 
-        return embeddings                  
+        return embeddings

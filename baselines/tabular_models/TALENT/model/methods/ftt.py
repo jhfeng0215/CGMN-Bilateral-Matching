@@ -14,7 +14,7 @@ class FTTMethod(Method):
                 categories=self.categories,
                 d_out=self.d_out,
                 **model_config
-                ).to(self.args.device) 
+                ).to(self.args.device)
         if self.args.use_float:
             self.model.float()
         else:

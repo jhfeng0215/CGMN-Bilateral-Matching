@@ -1,8 +1,4 @@
-\
-\
-\
-\
-   
+
 
 from __future__ import annotations
 from math import pi
@@ -24,13 +20,13 @@ def default(val, d):
 
 
 def broadcat(tensors, dim=-1):
-                                                
+
     broadcasted_tensors = broadcast_tensors(*tensors)
     return torch.cat(broadcasted_tensors, dim=dim)
 
 
 def rotate_half(x):
-                                           
+
     x = rearrange(x, "... (d r) -> ... d r", r=2)
     x1, x2 = x.unbind(dim=-1)
     x = torch.stack((-x2, x1), dim=-1)
@@ -52,12 +48,12 @@ def apply_rotary_emb(freqs, t, start_index=0, scale=1.0, seq_dim=-2):
         rot_dim <= t.shape[-1]
     ), f"feature dimension {t.shape[-1]} is not of sufficient size to rotate in all the positions {rot_dim}"
 
-                                                                           
+
     t_left = t[..., :start_index]
     t_middle = t[..., start_index:end_index]
     t_right = t[..., end_index:]
 
-                                                          
+
     t_transformed = (t_middle * freqs.cos() * scale) + (rotate_half(t_middle) * freqs.sin() * scale)
 
     out = torch.cat((t_left, t_transformed, t_right), dim=-1)
@@ -66,7 +62,7 @@ def apply_rotary_emb(freqs, t, start_index=0, scale=1.0, seq_dim=-2):
 
 
 def apply_learned_rotations(rotations, t, start_index=0, freq_ranges=None):
-                                  
+
     if exists(freq_ranges):
         rotations = einsum("..., f -> ... f", rotations, freq_ranges)
         rotations = rearrange(rotations, "... r f -> ... (r f)")
@@ -76,79 +72,7 @@ def apply_learned_rotations(rotations, t, start_index=0, freq_ranges=None):
 
 
 class RotaryEmbedding(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -167,9 +91,9 @@ class RotaryEmbedding(nn.Module):
         cache_if_possible=True,
     ):
         super().__init__()
-                                                                                                                    
-                                               
-                                                                                                                
+
+
+
 
         theta *= theta_rescale_factor ** (dim / (dim - 2))
 
@@ -193,21 +117,21 @@ class RotaryEmbedding(nn.Module):
 
         self.learned_freq = learned_freq
 
-                          
+
 
         self.tmp_store("dummy", torch.tensor(0))
 
-                                    
+
 
         self.seq_before_head_dim = seq_before_head_dim
         self.default_seq_dim = -3 if seq_before_head_dim else -2
 
-                               
+
 
         assert interpolate_factor >= 1.0
         self.interpolate_factor = interpolate_factor
 
-              
+
 
         self.use_xpos = use_xpos
         if not use_xpos:
@@ -218,7 +142,7 @@ class RotaryEmbedding(nn.Module):
         self.scale_base = xpos_scale_base
         self.tmp_store("scale", scale)
 
-                                               
+
 
         self.apply_rotary_emb = staticmethod(apply_rotary_emb)
 

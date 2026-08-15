@@ -10,34 +10,7 @@ from .attention import multi_head_attention_forward
 
 
 class ClassNode:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, depth=0):
         self.depth = depth
@@ -51,17 +24,7 @@ class ClassNode:
 
 
 class OneHotAndLinear(nn.Linear):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, num_classes: int, embed_dim: int):
         super().__init__(num_classes, embed_dim)
@@ -69,62 +32,21 @@ class OneHotAndLinear(nn.Linear):
         self.embed_dim = embed_dim
 
     def forward(self, src: Tensor) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-                                                                        
+
+
         one_hot = F.one_hot(src.long(), self.num_classes).to(src.dtype)
         return F.linear(one_hot, self.weight, self.bias)
 
 
 class SkippableLinear(nn.Linear):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, in_features: int, out_features: int, bias: bool = True, skip_value: float = -100.0):
         super().__init__(in_features, out_features, bias)
         self.skip_value = skip_value
 
     def forward(self, src: Tensor) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         out = F.linear(src, self.weight, self.bias)
         skip_mask = (src == self.skip_value).all(dim=-1)
@@ -135,25 +57,7 @@ class SkippableLinear(nn.Linear):
 
 
 class MLP(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -164,18 +68,18 @@ class MLP(nn.Module):
         bias: bool = True,
     ):
         super().__init__()
-                                    
+
         act_fn = self.get_activation(activation)
         layers = []
 
-                                               
+
         prev_dim = in_dim
         for hidden_dim in hidden_dims:
             layers.append(nn.Linear(prev_dim, hidden_dim, bias=bias))
             layers.append(act_fn())
             prev_dim = hidden_dim
 
-                                    
+
         if out_dim is not None:
             layers.append(nn.Linear(prev_dim, out_dim, bias=bias))
 
@@ -183,18 +87,7 @@ class MLP(nn.Module):
 
     @staticmethod
     def get_activation(activation: str) -> nn.Module:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         activation_map = {
             "relu": nn.ReLU,
@@ -209,44 +102,12 @@ class MLP(nn.Module):
         return activation_map[activation]
 
     def forward(self, X: Tensor) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         return self.net(X)
 
 
 class MultiheadAttention(nn.MultiheadAttention):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, embed_dim: int, num_heads: int, dropout: float = 0.0):
         super().__init__(embed_dim, num_heads, dropout, batch_first=True)
@@ -260,41 +121,7 @@ class MultiheadAttention(nn.MultiheadAttention):
         attn_mask: Optional[Tensor | int] = None,
         rope: Optional[RotaryEmbedding] = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if isinstance(attn_mask, int):
             assert key_padding_mask is None, "key_padding_mask is not supported with attn_mask as int"
@@ -318,29 +145,7 @@ class MultiheadAttention(nn.MultiheadAttention):
 
 
 class MultiheadAttentionBlock(nn.TransformerEncoderLayer):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -357,7 +162,7 @@ class MultiheadAttentionBlock(nn.TransformerEncoderLayer):
         self.init_weights()
 
     def init_weights(self):
-                                                                       
+
         nn.init.zeros_(self.attn.out_proj.weight)
         nn.init.zeros_(self.attn.out_proj.bias)
         nn.init.zeros_(self.linear2.weight)
@@ -372,49 +177,13 @@ class MultiheadAttentionBlock(nn.TransformerEncoderLayer):
         attn_mask: Optional[Tensor | int] = None,
         rope: Optional[RotaryEmbedding] = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if isinstance(attn_mask, int):
             assert key_padding_mask is None, "key_padding_mask is not supported with attn_mask as int"
             assert rope is None, "Rotary position embedding is not supported with attn_mask as int"
         else:
-                                                              
+
             key_padding_mask = F._canonical_mask(
                 mask=key_padding_mask,
                 mask_name="key_padding_mask",
@@ -431,19 +200,19 @@ class MultiheadAttentionBlock(nn.TransformerEncoderLayer):
                 check_other=False,
             )
 
-                                      
+
         k = q if k is None else k
         v = q if v is None else v
 
-                                                      
+
         x = q
         if self.norm_first:
-                                                          
+
             attn = self._attn_block(self.norm1(q), self.norm1(k), self.norm1(v), key_padding_mask, attn_mask, rope)
             x = x + attn
             x = x + self._ff_block(self.norm2(x))
         else:
-                                                          
+
             attn = self._attn_block(q, k, v, key_padding_mask, attn_mask, rope)
             x = self.norm1(x + attn)
             x = self.norm2(x + self._ff_block(x))
@@ -468,48 +237,7 @@ class MultiheadAttentionBlock(nn.TransformerEncoderLayer):
 
 
 class InducedSelfAttentionBlock(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -525,31 +253,17 @@ class InducedSelfAttentionBlock(nn.Module):
         super().__init__()
         self.skip_value = skip_value
 
-                                       
+
         self.multihead_attn1 = MultiheadAttentionBlock(d_model, nhead, dim_feedforward, dropout, activation, norm_first)
         self.multihead_attn2 = MultiheadAttentionBlock(d_model, nhead, dim_feedforward, dropout, activation, norm_first)
 
-                                   
+
         self.num_inds = num_inds
         self.ind_vectors = nn.Parameter(torch.empty(num_inds, d_model))
         nn.init.trunc_normal_(self.ind_vectors, std=0.02)
 
     def induced_attention(self, src: Tensor, train_size: Optional[int] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         *batch_shape, _, d_model = src.shape
         ind_vectors = self.ind_vectors.expand(*batch_shape, self.num_inds, d_model)
@@ -564,35 +278,19 @@ class InducedSelfAttentionBlock(nn.Module):
         return out
 
     def forward(self, src: Tensor, train_size: Optional[int] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
 
-                                                                               
-                             
-                                 
-                                                             
-                   
-                                             
-                                                                                       
-                                                  
-               
-                                                           
 
-                    
+
+
+
+
+
+
+
+
+
+
+
+
         out = self.induced_attention(src, train_size)
         return out

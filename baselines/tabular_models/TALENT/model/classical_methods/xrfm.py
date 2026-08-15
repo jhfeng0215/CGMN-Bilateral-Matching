@@ -57,13 +57,13 @@ class XRFMMethod(classical_methods):
             self.y, self.y_info, self.label_encoder = data_label_process(self.y, self.is_regression)
             self.n_bins = self.args.config['fit']['n_bins']
             self.N,self.num_encoder = num_enc_process(self.N,num_policy = self.args.num_policy, n_bins = self.n_bins,y_train=self.y['train'],is_regression=self.is_regression)
-            
-                                              
+
+
             self.N, self.normalizer = data_norm_process(self.N, self.args.normalization, self.args.seed)
-            
-                                                       
+
+
             self.N, self.C, self.ord_encoder, self.mode_values, self.cat_encoder = data_enc_process(self.N, self.C, self.args.cat_policy, self.y['train'])
-            
+
             if self.is_regression:
                 self.d_out = 1
             else:
@@ -75,7 +75,7 @@ class XRFMMethod(classical_methods):
             N_test, C_test, _, _, _ = data_nan_process(N, C, self.args.num_nan_policy, self.args.cat_nan_policy, self.num_new_value, self.imputer, self.cat_new_value)
             y_test, _, _ = data_label_process(y, self.is_regression, self.y_info, self.label_encoder)
             N_test,_ = num_enc_process(N_test,num_policy=self.args.num_policy,n_bins = self.n_bins,y_train=None,encoder = self.num_encoder)
-            
+
             N_test, _ = data_norm_process(N_test, self.args.normalization, self.args.seed, self.normalizer)
             N_test, C_test, _, _, _ = data_enc_process(N_test, C_test, self.args.cat_policy, None, self.ord_encoder, self.mode_values, self.cat_encoder)
             if N_test is not None and C_test is not None:
@@ -86,7 +86,7 @@ class XRFMMethod(classical_methods):
                 self.N_test,self.C_test = N_test['test'],None
             self.y_test = y_test['test']
             return
-        
+
         numerical_block = torch.arange(num_numerical_features)
         if self.cat_encoder is None:
             return numerical_block, [], []
@@ -113,11 +113,11 @@ class XRFMMethod(classical_methods):
 
         return numerical_indices, categorical_indices, categorical_vectors
 
-        
+
 
     def fit(self, data, info, train=True, config=None, train_on_subset=False):
         N, C, y = data
-                                                                                                  
+
         self.D = Dataset(N, C, y, info)
         self.N, self.C, self.y = self.D.N, self.D.C, self.D.y
         self.is_binclass, self.is_multiclass, self.is_regression = self.D.is_binclass, self.D.is_multiclass, self.D.is_regression
@@ -132,7 +132,7 @@ class XRFMMethod(classical_methods):
             'numerical_indices': numerical_indices
         }
         self.construct_model(categorical_info=categorical_info)
-        
+
         if self.C is None:
             assert self.N is not None
             X_train = torch.from_numpy(self.N['train'])
@@ -145,7 +145,7 @@ class XRFMMethod(classical_methods):
             assert self.C is not None and self.N is not None
             X_train = torch.from_numpy(np.concatenate((self.C['train'], self.N['train']), axis=1))
             X_val = torch.from_numpy(np.concatenate((self.C['val'], self.N['val']), axis=1))
-        
+
         X_train = X_train.to(dtype=torch.float32, device=self.args.device)
         X_val = X_val.to(dtype=torch.float32, device=self.args.device)
         y_train = torch.from_numpy(self.y['train'])
@@ -154,7 +154,7 @@ class XRFMMethod(classical_methods):
         if len(y_train.shape)==1:
             y_train = y_train.unsqueeze(-1)
             y_val = y_val.unsqueeze(-1)
-                
+
         self.model.tuning_metric = 'mse' if self.is_regression else 'accuracy'
 
         tic = time.time()
@@ -165,10 +165,10 @@ class XRFMMethod(classical_methods):
             self.trlog['best_res'] = accuracy_score(y_val.numpy(), y_val_pred)
         else:
             mse = mean_squared_error(y_val.numpy(), y_val_pred)
-            self.trlog['best_res'] = (mse ** 0.5) * self.y_info['std']                                 
+            self.trlog['best_res'] = (mse ** 0.5) * self.y_info['std']
 
         time_cost = time.time() - tic
-        
+
         checkpoint = {}
         checkpoint['state_dict'] = self.model.get_state_dict()
 
@@ -196,7 +196,7 @@ class XRFMMethod(classical_methods):
         X_train = X_train.to(dtype=torch.float32, device=self.args.device)
         self.model.load_state_dict(checkpoint['state_dict'], X_train)
 
-                                                 
+
         if self.C_test is None:
             assert self.N_test is not None
             X_test = torch.from_numpy(self.N_test)
@@ -212,17 +212,17 @@ class XRFMMethod(classical_methods):
         test_label = self.y_test
         if self.is_regression:
             test_output = self.model.predict(X_test)
-                                        
+
             if isinstance(test_output, torch.Tensor):
                 test_output = test_output.cpu().numpy()
-                                                                       
+
             if self.y_info.get('policy') == 'mean_std':
                 test_output = test_output * self.y_info['std'] + self.y_info['mean']
         else:
             test_output = self.model.predict_proba(X_test)
         vres, metric_name = self.metric(test_output, test_label, self.y_info)
         return vres, metric_name, test_output
-    
+
     def metric(self, predictions, labels, y_info):
         from sklearn import metrics as skm
         if self.is_regression:

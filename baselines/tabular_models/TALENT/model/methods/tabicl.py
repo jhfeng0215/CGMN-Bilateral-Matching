@@ -14,19 +14,14 @@ import time
 import os
 
 def check_softmax(logits):
-\
-\
-\
-\
-\
-       
-                                                                               
+
+
     if np.any((logits < 0) | (logits > 1)) or (not np.allclose(logits.sum(axis=-1), 1, atol=1e-5)):
-        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))                                
+        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))
         return exps / np.sum(exps, axis=1, keepdims=True)
     else:
         return logits
-    
+
 class TabICLMethod(Method):
     def __init__(self, args, is_regression):
         super().__init__(args, is_regression)
@@ -61,20 +56,20 @@ class TabICLMethod(Method):
                 random_state=self.args.seed,
                 checkpoint_version="tabicl-classifier-v1.1-0506.ckpt",
                 model_path="./TALENT/model/models/models_tabicl/tabicl-classifier-v1.1-0506.ckpt",
-                n_estimators=32,                                              
-                norm_methods=["none", "power"],                                 
-                feat_shuffle_method="latin",                                    
-                class_shift=True,                                                                 
-                outlier_threshold=4.0,                                                                  
-                softmax_temperature=0.9,                                          
-                average_logits=True,                                                                             
-                use_hierarchical=True,                                                                               
-                batch_size=8,                                                                                     
-                use_amp=True,                                                                         
-                allow_auto_download=True,                                                                      
-                n_jobs=None,                                                            
-                verbose=False,                                             
-                inference_config=None,                                                              
+                n_estimators=32,
+                norm_methods=["none", "power"],
+                feat_shuffle_method="latin",
+                class_shift=True,
+                outlier_threshold=4.0,
+                softmax_temperature=0.9,
+                average_logits=True,
+                use_hierarchical=True,
+                batch_size=8,
+                use_amp=True,
+                allow_auto_download=True,
+                n_jobs=None,
+                verbose=False,
+                inference_config=None,
             )
 
     def fit(self, data, info, train = True, config = None):
@@ -83,7 +78,7 @@ class TabICLMethod(Method):
         self.N, self.C, self.y = self.D.N, self.D.C, self.D.y
         self.is_binclass, self.is_multiclass, self.is_regression = self.D.is_binclass, self.D.is_multiclass, self.D.is_regression
         self.data_format(is_train = True)
-        
+
         sampled_Y = self.y['train']
         cat_indices = []
         if self.N is not None and self.C is not None:
@@ -117,7 +112,7 @@ class TabICLMethod(Method):
         self.sampled_Y = sampled_Y
         self.construct_model(cat_indices=cat_indices)
         self.model.fit(self.sampled_X,self.sampled_Y)
-        self.fit_time = 0                                          
+        self.fit_time = 0
 
     def predict(self, data, info, model_name):
         import time
@@ -130,7 +125,7 @@ class TabICLMethod(Method):
             Test_X = self.C_test
         else:
             Test_X = self.N_test
-            
+
         query_batch_size = int(os.environ.get("TABICL_QUERY_BATCH_SIZE", "0"))
         if query_batch_size > 0 and len(Test_X) > query_batch_size:
             chunks = []
@@ -154,7 +149,7 @@ class TabICLMethod(Method):
         vl = self.criterion(torch.tensor(test_logit),torch.tensor(test_label)).item()
         vres, metric_name = self.metric(test_logit, test_label, self.y_info)
 
-                                                 
+
         if self.is_regression and self.y_info.get('policy') == 'mean_std':
             test_logit = test_logit * self.y_info['std'] + self.y_info['mean']
 

@@ -1,4 +1,4 @@
-                                                     
+
 import collections
 import time
 import torch
@@ -9,30 +9,9 @@ from sklearn.metrics import roc_auc_score
 from .svd import nystrom_kernel_svd
 
 def asm_eigenpro_fn(samples, map_fn, top_q, bs_gpu, alpha, min_q=5, seed=1, verbose=True):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
 
-    np.random.seed(seed)                                  
+
+    np.random.seed(seed)
     start = time.time()
     n_sample, _ = samples.shape
 
@@ -41,12 +20,12 @@ def asm_eigenpro_fn(samples, map_fn, top_q, bs_gpu, alpha, min_q=5, seed=1, verb
     else:
         svd_q = top_q
 
-    
+
     eigvals, eigvecs = nystrom_kernel_svd(samples, map_fn, svd_q)
 
-                                                     
-                                               
-                                                   
+
+
+
     if top_q is None:
         print("Computing top_q")
         max_bs = min(max(n_sample / 5, bs_gpu), n_sample)
@@ -67,7 +46,7 @@ def asm_eigenpro_fn(samples, map_fn, top_q, bs_gpu, alpha, min_q=5, seed=1, verb
     diag_t = (1 - torch.pow(tail_eigval_t / eigvals_t, alpha)) / eigvals_t
 
     def eigenpro_fn(grad, kmat):
-                                                        
+
         return torch.mm(eigvecs_t * diag_t,
                         torch.t(torch.mm(torch.mm(torch.t(grad),
                                                   kmat),
@@ -77,7 +56,7 @@ def asm_eigenpro_fn(samples, map_fn, top_q, bs_gpu, alpha, min_q=5, seed=1, verb
         print("SVD time: %.2f, top_q: %d, top_eigval: %.2f, new top_eigval: %.2e" %
               (time.time() - start, top_q, eigvals[0], eigvals[0] / scale))
 
-                             
+
     knorms = 1 - torch.sum(eigvecs ** 2, dim=1) * n_sample
     beta = torch.max(knorms)
 
@@ -85,7 +64,7 @@ def asm_eigenpro_fn(samples, map_fn, top_q, bs_gpu, alpha, min_q=5, seed=1, verb
 
 
 class KernelModel(nn.Module):
-                                                          
+
     def __init__(self, kernel_fn, centers, y_dim, device="cuda"):
         super(KernelModel, self).__init__()
         self.kernel_fn = kernel_fn
@@ -96,7 +75,7 @@ class KernelModel(nn.Module):
         self.centers = self.tensor(centers, release=True, dtype=centers.dtype)
         self.weight = self.tensor(torch.zeros(
             self.n_centers, y_dim), release=True, dtype=centers.dtype)
-        
+
         self.save_kernel_matrix = False
         self.kernel_matrix = [] if self.save_kernel_matrix else None
 
@@ -133,7 +112,7 @@ class KernelModel(nn.Module):
         if weight is None:
             weight = self.weight
         kmat = self.get_kernel_matrix(batch, batch_ids)
-        if save_kernel_matrix:                                            
+        if save_kernel_matrix:
             self.kernel_matrix.append((batch_ids.cpu(), kmat.cpu()))
         pred = kmat.mm(weight)
         return pred
@@ -156,11 +135,11 @@ class KernelModel(nn.Module):
 
     def eigenpro_iterate(self, samples, x_batch, y_batch, eigenpro_fn,
                          eta, sample_ids, batch_ids, save_kernel_matrix=False):
-                                                        
+
         grad = self.primal_gradient(x_batch, y_batch, self.weight, batch_ids, save_kernel_matrix)
         self.weight.index_add_(0, batch_ids, -eta * grad)
 
-                                                      
+
         kmat = self.get_kernel_matrix(x_batch, batch_ids, samples, sample_ids)
         correction = eigenpro_fn(grad, kmat)
         self.weight.index_add_(0, sample_ids, eta * correction)
@@ -203,10 +182,10 @@ class KernelModel(nn.Module):
 
     def fit(self, X_train, y_train, X_val, y_val, epochs, mem_gb,
             n_subsamples=None, top_q=None, bs=None, eta=None,
-            n_eval=1000, run_epoch_eval=True, lr_scale=1, 
+            n_eval=1000, run_epoch_eval=True, lr_scale=1,
             verbose=True, seed=1, classification=False, threshold=1e-5,
             early_stopping_window_size=7, eval_interval=1):
-        
+
         X_train = X_train.to(self.device)
         y_train = y_train.to(self.device)
         X_val = X_val.to(self.device)
@@ -233,13 +212,13 @@ class KernelModel(nn.Module):
             n_subsamples = min(n_samples, 12000)
         n_subsamples = min(n_subsamples, n_samples)
 
-        mem_bytes = (mem_gb - 1) * 1024**3                
+        mem_bytes = (mem_gb - 1) * 1024**3
         bsizes = np.arange(n_subsamples)
         mem_usages = ((self.x_dim + 3 * n_labels + bsizes + 1)
                       * self.n_centers + n_subsamples * 1000) * 4
-        bs_gpu = np.sum(mem_usages < mem_bytes)                               
+        bs_gpu = np.sum(mem_usages < mem_bytes)
 
-                                                                               
+
         np.random.seed(seed)
         sample_ids = np.random.choice(n_samples, n_subsamples, replace=False)
         sample_ids = self.tensor(sample_ids)
@@ -262,20 +241,20 @@ class KernelModel(nn.Module):
 
         res = dict()
         initial_epoch = 0
-        train_sec = 0                            
+        train_sec = 0
         best_weights = None
         if classification:
             best_metric = 0
         else:
             best_metric = float('inf')
-        
-                                      
+
+
         val_loss_history = []
 
         for epoch in range(epochs):
             start = time.time()
             for _ in range(epoch - initial_epoch):
-                                                     
+
                 epoch_ids = np.random.permutation(n_samples)
 
                 save_kernel_matrix = epoch==1 and self.save_kernel_matrix
@@ -290,11 +269,11 @@ class KernelModel(nn.Module):
 
                 if save_kernel_matrix:
                     print(f"Storing kernel matrix")
-                                                
+
                     concat_matrix = torch.cat([pair[1] for pair in self.kernel_matrix], dim=0)
-                                                               
+
                     all_batch_ids = torch.cat([pair[0] for pair in self.kernel_matrix])
-                                                                
+
                     _, sort_indices = torch.sort(all_batch_ids)
                     self.kernel_matrix = concat_matrix[sort_indices]
                     self.kernel_matrix = self.kernel_matrix.to(self.device)
@@ -310,7 +289,7 @@ class KernelModel(nn.Module):
                 tv_score = self.evaluate(X_val, y_val, bs=bs, metrics=metrics)
                 eval_time = time.time() - eval_start
                 print(f"Val Eval time: {eval_time} seconds")
-                
+
                 if verbose:
                     out_str = f"({epoch} epochs, {train_sec} seconds)\t train l2: {tr_score['mse']} \tval l2: {tv_score['mse']}"
                     if classification:
@@ -326,7 +305,7 @@ class KernelModel(nn.Module):
 
                 res[epoch] = (tr_score, tv_score, train_sec)
 
-                                               
+
                 if 'binary-acc' in tv_score:
                     val_loss_history.append(tv_score['binary-acc'] <= best_metric)
                 elif 'multiclass-acc' in tv_score:
@@ -335,7 +314,7 @@ class KernelModel(nn.Module):
                     val_loss_history.append(tv_score['mse'] >= best_metric)
                 if len(val_loss_history) > early_stopping_window_size:
                     val_loss_history.pop(0)
-                                                                                         
+
                     if sum(val_loss_history) / len(val_loss_history) >= 0.8:
                         if verbose:
                             print(f"Early stopping triggered: validation loss increased in majority of last {early_stopping_window_size} epochs")

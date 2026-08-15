@@ -23,11 +23,7 @@ from . import encoders
 
 
 def torch_masked_mean(x, mask, dim=0, return_share_of_ignored_values=False):
-\
-\
-\
-\
-       
+
     num = torch.where(mask, torch.full_like(x, 1), torch.full_like(x, 0)).sum(dim=dim)
     value = torch.where(mask, x, torch.full_like(x, 0)).sum(dim=dim)
     if return_share_of_ignored_values:
@@ -35,10 +31,7 @@ def torch_masked_mean(x, mask, dim=0, return_share_of_ignored_values=False):
     return value / num
 
 def torch_masked_std(x, mask, dim=0):
-\
-\
-\
-       
+
     num = torch.where(mask, torch.full_like(x, 1), torch.full_like(x, 0)).sum(dim=dim)
     value = torch.where(mask, x, torch.full_like(x, 0)).sum(dim=dim)
     mean = value / num
@@ -78,7 +71,7 @@ def to_ranking_low_mem(data):
     return x
 
 def remove_outliers(X, n_sigma=4, normalize_positions=-1):
-                     
+
     assert len(X.shape) == 3, "X must be T,B,H"
 
     data = X if normalize_positions == -1 else X[:normalize_positions]
@@ -95,14 +88,11 @@ def remove_outliers(X, n_sigma=4, normalize_positions=-1):
 
     X = torch.maximum(-torch.log(1+torch.abs(X)) + lower, X)
     X = torch.minimum(torch.log(1+torch.abs(X)) + upper, X)
-                                                                                                                               
+
     return X
 
 def load_model_only_inference(path, filename, device):
-\
-\
-\
-       
+
 
     model_state, optimizer_state, config_sample = torch.load(os.path.join(path, filename), map_location='cpu')
 
@@ -130,7 +120,7 @@ def load_model_only_inference(path, filename, device):
                              dropout=config_sample['dropout'],
                              efficient_eval_masking=config_sample['efficient_eval_masking'])
 
-                                                                                                                      
+
 
     model.criterion = loss
     module_prefix = 'module.'
@@ -139,26 +129,13 @@ def load_model_only_inference(path, filename, device):
     model.to(device)
     model.eval()
 
-    return (float('inf'), float('inf'), model), config_sample                   
+    return (float('inf'), float('inf'), model), config_sample
 
 
 def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='', only_inference=True):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     def get_file(e):
-\
-\
-           
+
         model_file = f'models_tabpfn/prior_diff_real_checkpoint{add_name}_n_{i}_epoch_{e}.cpkt'
         model_path = os.path.join(base_path, model_file)
         results_file = os.path.join(base_path, f'models_tabpfn/prior_diff_real_results{add_name}_n_{i}_epoch_{e}_{eval_addition}.pkl')
@@ -166,7 +143,7 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
 
     def check_file(e):
         model_file, model_path, results_file = get_file(e)
-        if not Path(model_path).is_file():                                    
+        if not Path(model_path).is_file():
             print('We have to download the TabPFN, as there is no checkpoint at ', model_path)
             print('It has about 100MB, so this might take a moment.')
             import requests
@@ -192,16 +169,12 @@ def load_model_workflow(i, e, add_name, base_path, device='cpu', eval_addition='
         raise Exception('No checkpoint found at '+str(model_path))
 
 
-                                   
+
     if only_inference:
-                                                                    
+
         model, c = load_model_only_inference(base_path, model_file, device)
-\
-\
-\
-\
-       
-                                                                                           
+
+
 
     return model, c, results_file
 
@@ -222,7 +195,7 @@ class CustomUnpickler(pickle.Unpickler):
             return lambda b: torch.load(io.BytesIO(b), map_location='cpu')
         else:
             return super().find_class(module, name)
-        
+
 
 
 import time
@@ -250,37 +223,13 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
                         no_grad=True,
                         return_logits=False,
                         **kwargs):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     num_classes = len(torch.unique(eval_ys))
 
     def predict(eval_xs, eval_ys, used_style, softmax_temperature, return_logits):
-                                                     
 
-                                                                                   
+
+
         inference_mode_call = torch.inference_mode() if inference_mode and no_grad else NOP()
         with inference_mode_call:
             start = time.time()
@@ -291,14 +240,14 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
             output = output[:, :, 0:num_classes] / torch.exp(softmax_temperature)
             if not return_logits:
                 output = torch.nn.functional.softmax(output, dim=-1)
-                  
-                                                                                                                                      
-                                                          
 
-                                                                             
-                                                      
 
-                                                                                                        
+
+
+
+
+
+
 
         return output
 
@@ -319,10 +268,10 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
             elif preprocess_transform == 'robust' or preprocess_transform == 'robust_all':
                 pt = RobustScaler(unit_variance=True)
 
-                                                                             
+
         eval_xs = normalize_data(eval_xs, normalize_positions=-1 if normalize_with_test else eval_position)
 
-                                 
+
         eval_xs = eval_xs[:, 0, :]
         sel = [len(torch.unique(eval_xs[0:eval_ys.shape[0], col])) > 1 for col in range(eval_xs.shape[1])]
         eval_xs = eval_xs[:, sel]
@@ -336,7 +285,7 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
                 try:
                     pt.fit(eval_xs[0:eval_position, col:col + 1])
                     trans = pt.transform(eval_xs[:, col:col + 1])
-                                                                                                                                                    
+
                     eval_xs[:, col:col + 1] = trans
                 except:
                     pass
@@ -345,10 +294,10 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
 
         eval_xs = eval_xs.unsqueeze(1)
 
-                                                                                                  
+
         eval_xs = remove_outliers(eval_xs, normalize_positions=-1 if normalize_with_test else eval_position)\
                 if not normalize_to_ranking else normalize_data(to_ranking_low_mem(eval_xs))
-                   
+
         eval_xs = normalize_by_used_features_f(eval_xs, eval_xs.shape[-1], max_features,
                                                normalize_with_sqrt=normalize_with_sqrt)
 
@@ -380,8 +329,8 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
     def get_preprocess(i):
         if i == 0:
             return 'power_all'
-                       
-                                    
+
+
         if i == 1:
             return 'none'
 
@@ -394,14 +343,14 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
     class_shift_configurations = torch.randperm(len(torch.unique(eval_ys))) if multiclass_decoder == 'permutation' else [0]
 
     ensemble_configurations = list(itertools.product(class_shift_configurations, feature_shift_configurations))
-                                                         
+
 
     rng = random.Random(seed)
     rng.shuffle(ensemble_configurations)
     ensemble_configurations = list(itertools.product(ensemble_configurations, preprocess_transform_configurations, styles_configurations))
     ensemble_configurations = ensemble_configurations[0:N_ensemble_configurations]
-                                       
-                                                            
+
+
 
     output = None
 
@@ -428,7 +377,7 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
 
         eval_xs_ = torch.cat([eval_xs_[..., feature_shift_configuration:],eval_xs_[..., :feature_shift_configuration]],dim=-1)
 
-                  
+
         if extend_features:
             eval_xs_ = torch.cat(
                 [eval_xs_,
@@ -440,11 +389,11 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
     inputs = torch.split(inputs, batch_size_inference, dim=1)
     labels = torch.cat(labels, 1)
     labels = torch.split(labels, batch_size_inference, dim=1)
-                                                          
+
     outputs = []
     start = time.time()
     for batch_input, batch_label in zip(inputs, labels):
-                                                                                                  
+
         import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",
@@ -457,7 +406,7 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
                 with torch.cuda.amp.autocast(enabled=fp16_inference):
                     output_batch = checkpoint(predict, batch_input, batch_label, style_, softmax_temperature_, True)
         outputs += [output_batch]
-                                                                                                                               
+
 
     outputs = torch.cat(outputs, 1)
     for i, ensemble_configuration in enumerate(ensemble_configurations):
@@ -465,9 +414,9 @@ def transformer_predict(model, eval_xs, eval_ys, eval_position,
         output_ = outputs[:, i:i+1, :]
         output_ = torch.cat([output_[..., class_shift_configuration:],output_[..., :class_shift_configuration]],dim=-1)
 
-                                                                           
+
         if not average_logits and not return_logits:
-                                                                                                                     
+
             output_ = torch.nn.functional.softmax(output_, dim=-1)
         output = output_ if output is None else output + output_
 

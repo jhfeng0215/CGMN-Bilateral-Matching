@@ -10,67 +10,7 @@ from .inference_config import InferenceConfig
 
 
 class TabICL(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -131,7 +71,7 @@ class TabICL(nn.Module):
             norm_first=norm_first,
         )
 
-        icl_dim = embed_dim * row_num_cls                                       
+        icl_dim = embed_dim * row_num_cls
         self.icl_predictor = ICLearning(
             max_classes=max_classes,
             d_model=icl_dim,
@@ -146,45 +86,22 @@ class TabICL(nn.Module):
     def _train_forward(
         self, X: Tensor, y_train: Tensor, d: Optional[Tensor] = None, embed_with_test: bool = False
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         B, T, H = X.shape
         train_size = y_train.shape[1]
         assert train_size <= T, "Number of training samples exceeds total samples"
 
-                                                                                  
+
         if d is not None and len(d.unique()) == 1 and d[0] == H:
             d = None
 
-                                                       
+
         representations = self.row_interactor(
             self.col_embedder(X, d=d, train_size=None if embed_with_test else train_size), d=d
         )
 
-                                          
+
         out = self.icl_predictor(representations, y_train=y_train)
 
         return out
@@ -199,45 +116,7 @@ class TabICL(nn.Module):
         softmax_temperature: float = 0.9,
         inference_config: InferenceConfig = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         train_size = y_train.shape[1]
         assert train_size <= X.shape[1], "Number of training samples exceeds total samples"
@@ -245,7 +124,7 @@ class TabICL(nn.Module):
         if inference_config is None:
             inference_config = InferenceConfig()
 
-                                                       
+
         representations = self.row_interactor(
             self.col_embedder(
                 X,
@@ -256,7 +135,7 @@ class TabICL(nn.Module):
             mgr_config=inference_config.ROW_CONFIG,
         )
 
-                                          
+
         out = self.icl_predictor(
             representations,
             y_train=y_train,
@@ -278,51 +157,7 @@ class TabICL(nn.Module):
         softmax_temperature: float = 0.9,
         inference_config: InferenceConfig = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if self.training:
             out = self._train_forward(X, y_train, d=d, embed_with_test=embed_with_test)

@@ -6,11 +6,7 @@ import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 def torch_masked_mean(x, mask, dim=0, return_share_of_ignored_values=False):
-\
-\
-\
-\
-       
+
     num = torch.where(mask, torch.full_like(x, 1), torch.full_like(x, 0)).sum(dim=dim)
     value = torch.where(mask, x, torch.full_like(x, 0)).sum(dim=dim)
     if return_share_of_ignored_values:
@@ -18,10 +14,7 @@ def torch_masked_mean(x, mask, dim=0, return_share_of_ignored_values=False):
     return value / num
 
 def torch_masked_std(x, mask, dim=0):
-\
-\
-\
-       
+
     num = torch.where(mask, torch.full_like(x, 1), torch.full_like(x, 0)).sum(dim=dim)
     value = torch.where(mask, x, torch.full_like(x, 0)).sum(dim=dim)
     mean = value / num
@@ -54,14 +47,14 @@ class _PositionalEncoding(nn.Module):
         self.d_model = d_model
         self.device_test_tensor = nn.Parameter(torch.tensor(1.))
 
-    def forward(self, x):                      
+    def forward(self, x):
         assert self.d_model % x.shape[-1]*2 == 0
         d_per_feature = self.d_model // x.shape[-1]
         pe = torch.zeros(*x.shape, d_per_feature, device=self.device_test_tensor.device)
-                                                                            
+
         interval_size = 10
         div_term = (1./interval_size) * 2*math.pi*torch.exp(torch.arange(0, d_per_feature, 2, device=self.device_test_tensor.device).float()*math.log(math.sqrt(2)))
-                                  
+
         pe[..., 0::2] = torch.sin(x.unsqueeze(-1) * div_term)
         pe[..., 1::2] = torch.cos(x.unsqueeze(-1) * div_term)
         return self.dropout(pe).view(x.shape[0],x.shape[1],self.d_model)
@@ -88,10 +81,10 @@ class EmbeddingEncoder(nn.Module):
         split_size = self.width / self.num_embs
         return (x - self.min_max[0] // split_size).int().clamp(0, self.num_embs - 1)
 
-    def forward(self, x):                        
+    def forward(self, x):
         x_idxs = self.discretize(x)
         x_idxs += torch.arange(x.shape[-1], device=x.device).view(1, 1, -1) * self.num_embs
-                                                    
+
         return self.embeddings(x_idxs).mean(-2)
 
 

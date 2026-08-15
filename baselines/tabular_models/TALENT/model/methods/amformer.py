@@ -15,7 +15,7 @@ class AMFormerMethod(Method):
                 categories=self.categories,
                 out=self.d_out,
                 **model_config
-                ).to(self.args.device) 
+                ).to(self.args.device)
         if self.args.use_float:
             self.model.float()
         else:

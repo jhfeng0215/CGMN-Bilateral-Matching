@@ -49,7 +49,7 @@ class TabPFNMethod(Method):
 
     def fit(self, data, info, train = True, config = None):
         N, C, y = data
-                            
+
         self.D = Dataset(N, C, y, info)
         self.N, self.C, self.y = self.D.N, self.D.C, self.D.y
         self.is_binclass, self.is_multiclass, self.is_regression = self.D.is_binclass, self.D.is_multiclass, self.D.is_regression
@@ -65,12 +65,12 @@ class TabPFNMethod(Method):
             sampled_X = self.N['train']
         sample_size = self.args.config['general']['sample_size']
         if self.y['train'].shape[0] > sample_size:
-                                                                                                                
+
             from sklearn.model_selection import train_test_split
             sampled_X, _, sampled_Y, _ = train_test_split(sampled_X, sampled_Y, train_size=sample_size, stratify=sampled_Y)
         self.model.fit(sampled_X, sampled_Y, overwrite_warning=True)
-        self.fit_time = 0                                          
-    
+        self.fit_time = 0
+
     def predict(self, data, info, model_name):
         N, C, y = data
         self.data_format(False, N, C, y)
@@ -80,7 +80,7 @@ class TabPFNMethod(Method):
             Test_X = self.C_test
         else:
             Test_X = self.N_test
-        
+
         tic = time.time()
         test_logit = self.model.predict_proba(Test_X)
         self.predict_time = time.time() - tic

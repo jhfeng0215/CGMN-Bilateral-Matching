@@ -6,33 +6,7 @@ from torch.nn.modules.transformer import _get_activation_fn, Module, Tensor, Opt
 from torch.utils.checkpoint import checkpoint
 
 class TransformerEncoderLayer(Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     __constants__ = ['batch_first']
 
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1, activation="relu",
@@ -42,7 +16,7 @@ class TransformerEncoderLayer(Module):
         super().__init__()
         self.self_attn = MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=batch_first,
                                             **factory_kwargs)
-                                             
+
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
         self.dropout = Dropout(dropout)
         self.linear2 = Linear(dim_feedforward, d_model, **factory_kwargs)
@@ -62,22 +36,13 @@ class TransformerEncoderLayer(Module):
         super().__setstate__(state)
 
     def forward(self, src: Tensor, src_mask: Optional[Tensor] = None, src_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if self.pre_norm:
             src_ = self.norm1(src)
         else:
             src_ = src
         if isinstance(src_mask, tuple):
-                                    
+
             assert not self.self_attn.batch_first
             assert src_key_padding_mask is None
 

@@ -9,7 +9,7 @@ from torch import Tensor
 from torch.nn.parameter import Parameter
 import math
 
-                                                                 
+
 def _initialize_embeddings(weight: Tensor, d: Optional[int]) -> None:
     if d is None:
         d = weight.shape[-1]
@@ -158,19 +158,14 @@ class NLinear(nn.Module):
 
 
 class LREmbeddings(nn.Sequential):
-                                                                                                                         
+
 
     def __init__(self, n_features: int, d_embedding: int) -> None:
         super().__init__(LinearEmbeddings(n_features, d_embedding), nn.ReLU())
 
 
 class PLREmbeddings(nn.Sequential):
-\
-\
-\
-\
-\
-                     
+
 
     def __init__(
         self,
@@ -210,16 +205,16 @@ class PBLDEmbeddings(nn.Module):
         self.plr_use_densenet = plr_use_densenet
 
     def forward(self, x):
-                                                                                      
-                                          
-                                                         
+
+
+
         x_orig = x
         x = x.transpose(-1, -2).unsqueeze(-1)
-        x = 2 * torch.pi * x.matmul(self.weight_1)                                   
+        x = 2 * torch.pi * x.matmul(self.weight_1)
         x = x + self.bias_1
-                          
+
         x = torch.cos(x)
-        x = x.matmul(self.weight_2)                                   
+        x = x.matmul(self.weight_2)
         x = x + self.bias_2
         if self.plr_act_name == 'relu':
             x = torch.relu(x)
@@ -227,8 +222,8 @@ class PBLDEmbeddings(nn.Module):
             pass
         else:
             raise ValueError(f'Unknown plr_act_name "{self.plr_act_name}"')
-                                                   
-                                              
+
+
         x = x.transpose(-2, -3)
         x = x.reshape(*x.shape[:-2], x.shape[-2] * x.shape[-1])
         if self.plr_use_densenet:
@@ -238,67 +233,67 @@ class PBLDEmbeddings(nn.Module):
 
 
 
-                       
-                             
-                       
-                   
-                
-                        
-                         
-                         
-                              
-                             
-                    
-                                
-                                                        
-                                                       
-                                                
 
-                                                 
-                                                                  
 
-                      
 
-                   
-               
-            
-                    
-                               
-                        
-                       
-                          
-                         
-                
-                             
-                            
 
-                                      
-                
-                            
-                                                        
-                                    
-                                
-                                            
-                                      
-                   
-                                                
-               
-           
-                                                                         
 
-               
-                             
-                  
-                                                                       
-                                  
-                                         
-           
 
-                                             
-                            
-                                   
-                              
-                  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class MLP(nn.Module):
     def __init__(
@@ -346,13 +341,7 @@ _CUSTOM_MODULES = {
 }
 
 def make_module(spec, *args, **kwargs) -> nn.Module:
-\
-\
-\
-\
-\
-\
-       
+
     if isinstance(spec, str):
         Module = getattr(nn, spec, None)
         if Module is None:
@@ -368,7 +357,7 @@ def make_module(spec, *args, **kwargs) -> nn.Module:
         return spec(*args, **kwargs)
     else:
         raise ValueError()
-    
+
 def make_module1(type: str, *args, **kwargs) -> nn.Module:
     Module = getattr(nn, type, None)
     if Module is None:

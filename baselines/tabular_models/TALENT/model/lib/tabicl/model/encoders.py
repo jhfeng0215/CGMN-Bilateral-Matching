@@ -8,38 +8,7 @@ from .rope import RotaryEmbedding
 
 
 class Encoder(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -80,32 +49,7 @@ class Encoder(nn.Module):
         key_padding_mask: Optional[Tensor] = None,
         attn_mask: Optional[Tensor | int] = None,
     ) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         out = src
         for block in self.blocks:
             out = block(q=out, key_padding_mask=key_padding_mask, attn_mask=attn_mask, rope=self.rope)
@@ -114,43 +58,7 @@ class Encoder(nn.Module):
 
 
 class SetTransformer(nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -184,23 +92,7 @@ class SetTransformer(nn.Module):
         )
 
     def forward(self, src: Tensor, train_size: Optional[int] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         out = src
         for block in self.blocks:
             out = block(out, train_size)

@@ -14,12 +14,12 @@ from TALENT.model.lib.tabr.utils import make_module,make_module1,MLP,ResNet
 def _get_first_input_scaling(
     backbone):
     if isinstance(backbone, MLP):
-        return backbone.blocks[0][0]                      
+        return backbone.blocks[0][0]
     elif isinstance(backbone, ResNet):
-        return backbone.blocks[0][1] if backbone.proj is None else backbone.proj                      
+        return backbone.blocks[0][1] if backbone.proj is None else backbone.proj
     else:
         raise RuntimeError(f'Unsupported backbone: {backbone}')
-    
+
 class TabM(nn.Module):
     def __init__(
         self,
@@ -27,20 +27,20 @@ class TabM(nn.Module):
         n_num_features: int,
         cat_cardinalities: list[int],
         n_classes: None | int,
-                                    
+
         backbone: dict,
         num_embeddings: None | dict = None,
         arch_type: Literal[
-                    
-            'vanilla',             
-            'tabm',                                                          
-            'tabm-mini',                     
-                           
+
+            'vanilla',
+            'tabm',
+            'tabm-mini',
+
             'tabm-naive'
         ],
         k: None | int = None,
     ) -> None:
-                                 
+
         assert n_num_features >= 0
         assert n_num_features or cat_cardinalities
         if arch_type == 'vanilla':
@@ -52,15 +52,15 @@ class TabM(nn.Module):
             cat_cardinalities = []
         super().__init__()
 
-                                             
+
         scaling_init_sections = []
         if n_num_features == 0:
-                                 
+
             self.num_module = None
             d_num = 0
 
         elif num_embeddings is None:
-                                 
+
             self.num_module = None
             d_num = n_num_features
             scaling_init_sections.extend(1 for _ in range(n_num_features))
@@ -74,14 +74,14 @@ class TabM(nn.Module):
                 num_embeddings['d_embedding'] for _ in range(n_num_features)
             )
 
-                                  
+
         self.cat_module = (
             OneHotEncoding0d(cat_cardinalities) if cat_cardinalities else None
         )
         scaling_init_sections.extend(cat_cardinalities)
         d_cat = sum(cat_cardinalities)
 
-                      
+
         d_flat = d_num + d_cat
         self.affine_ensemble = None
         self.backbone = make_module1(d_in=d_flat,**backbone)
@@ -95,7 +95,7 @@ class TabM(nn.Module):
             )
 
             if arch_type == 'tabm-mini':
-                                                          
+
                 self.affine_ensemble = ElementwiseAffineEnsemble(
                     k,
                     d_flat,
@@ -108,13 +108,13 @@ class TabM(nn.Module):
                     ),
                 )
                 _init_scaling_by_sections(
-                    self.affine_ensemble.weight,                      
+                    self.affine_ensemble.weight,
                     scaling_init,
                     scaling_init_sections,
                 )
 
             elif arch_type == 'tabm-naive':
-                                             
+
                 make_efficient_ensemble(
                     self.backbone,
                     k=k,
@@ -124,8 +124,8 @@ class TabM(nn.Module):
                     scaling_init='random-signs',
                 )
             elif arch_type == 'tabm':
-                                                                                 
-                                            
+
+
                 make_efficient_ensemble(
                     self.backbone,
                     k=k,
@@ -135,7 +135,7 @@ class TabM(nn.Module):
                     scaling_init='ones',
                 )
                 _init_scaling_by_sections(
-                    _get_first_input_scaling(self.backbone).r,                      
+                    _get_first_input_scaling(self.backbone).r,
                     scaling_init,
                     scaling_init_sections,
                 )
@@ -143,16 +143,16 @@ class TabM(nn.Module):
             else:
                 raise ValueError(f'Unknown arch_type: {arch_type}')
 
-                    
+
         d_block = backbone['d_block']
         d_out = 1 if n_classes is None else n_classes
         self.output = (
             nn.Linear(d_block, d_out)
             if arch_type == 'vanilla'
-            else delu.nn.NLinear(k, d_block, d_out)                      
+            else delu.nn.NLinear(k, d_block, d_out)
         )
         self.d_out = d_out
-             
+
         self.arch_type = arch_type
         self.k = k
 
@@ -172,7 +172,7 @@ class TabM(nn.Module):
             x = x.float()
 
         if self.k is not None:
-            x = x[:, None].expand(-1, self.k, -1)                       
+            x = x[:, None].expand(-1, self.k, -1)
             if self.affine_ensemble is not None:
                 x = self.affine_ensemble(x)
         else:
@@ -180,11 +180,11 @@ class TabM(nn.Module):
 
         x = self.backbone(x)
         x = self.output(x)
-                        
+
         if self.k is None:
-                                                                                  
-                                                                            
-                                         
+
+
+
             x = x[:, None]
         if self.d_out == 1:
             x = x.squeeze(-1)

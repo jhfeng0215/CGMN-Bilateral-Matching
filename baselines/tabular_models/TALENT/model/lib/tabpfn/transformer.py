@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn import Module, TransformerEncoder
 
-from . import layer 
+from . import layer
 
 def bool_mask_to_att_mask(mask):
     return mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
@@ -84,8 +84,8 @@ class TransformerModel(nn.Module):
         train_size = seq_len + num_global_att_tokens - num_query_tokens
         trainset_size = seq_len - num_query_tokens
         mask = torch.zeros(trainset_size, num_global_att_tokens) == 0
-                                               
-                                                                        
+
+
         return bool_mask_to_att_mask(mask)
 
     @staticmethod
@@ -95,10 +95,10 @@ class TransformerModel(nn.Module):
 
     def init_weights(self):
         initrange = 1.
-                                                       
-                                                                     
-                                        
-                                                                  
+
+
+
+
         if self.init_method is not None:
             self.apply(self.init_method)
         for layer in self.transformer_encoder.layers:
@@ -112,7 +112,7 @@ class TransformerModel(nn.Module):
     def forward(self, src, src_mask=None, single_eval_pos=None):
         assert isinstance(src, tuple), 'inputs (src) have to be given as (x,y) or (style,x,y) tuple'
 
-        if len(src) == 2:                     
+        if len(src) == 2:
             src = (None,) + src
 
         style_src, x_src, y_src = src
@@ -180,7 +180,7 @@ class TransformerModel(nn.Module):
             small_hid_dim = small_layer.linear1.out_features
             my_in_dim = my_layer.linear1.in_features
 
-                                                   
+
             my_in_proj_w = my_layer.self_attn.in_proj_weight
             small_in_proj_w = small_layer.self_attn.in_proj_weight
 
@@ -207,13 +207,7 @@ class TransformerModel(nn.Module):
 
 
 class TransformerEncoderDiffInit(Module):
-\
-\
-\
-\
-\
-\
-       
+
     __constants__ = ['norm']
 
     def __init__(self, encoder_layer_creator, num_layers, norm=None):
@@ -223,16 +217,7 @@ class TransformerEncoderDiffInit(Module):
         self.norm = norm
 
     def forward(self, src: Tensor, mask: Optional[Tensor] = None, src_key_padding_mask: Optional[Tensor] = None) -> Tensor:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         output = src
 
         for mod in self.layers:

@@ -7,7 +7,7 @@ from TALENT.model.utils import (
     set_seeds,
     get_device
 )
-                                      
+
 from TALENT.model.lib.data import (
     Dataset,
     data_nan_process,
@@ -18,13 +18,13 @@ from TALENT.model.lib.data import (
 )
 
 def check_softmax(logits):
-                                                                               
+
     if np.any((logits < 0) | (logits > 1)) or (not np.allclose(logits.sum(axis=-1), 1, atol=1e-5)):
-        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))                                
+        exps = np.exp(logits - np.max(logits, axis=1, keepdims=True))
         return exps / np.sum(exps, axis=1, keepdims=True)
     else:
         return logits
-    
+
 class classical_methods(object, metaclass=abc.ABCMeta):
     def __init__(self, args, is_regression):
         self.args = args
@@ -43,7 +43,7 @@ class classical_methods(object, metaclass=abc.ABCMeta):
             self.N,self.num_encoder = num_enc_process(self.N,num_policy = self.args.num_policy, n_bins = self.n_bins,y_train=self.y['train'],is_regression=self.is_regression)
             self.N, self.C, self.ord_encoder, self.mode_values, self.cat_encoder = data_enc_process(self.N, self.C, self.args.cat_policy, self.y['train'])
             self.N, self.normalizer = data_norm_process(self.N, self.args.normalization, self.args.seed)
-            
+
             if self.is_regression:
                 self.d_out = 1
             else:
@@ -64,26 +64,26 @@ class classical_methods(object, metaclass=abc.ABCMeta):
             else:
                 self.N_test,self.C_test = N_test['test'],None
             self.y_test = y_test['test']
-            
+
     def construct_model(self, model_config = None):
         raise NotImplementedError
 
     def fit(self, data, info, train = True, config = None):
         N, C, y = data
-                            
+
         self.D = Dataset(N, C, y, info)
         self.N, self.C, self.y = self.D.N, self.D.C, self.D.y
         self.is_binclass, self.is_multiclass, self.is_regression = self.D.is_binclass, self.D.is_multiclass, self.D.is_regression
-          
+
         if config is not None:
             self.reset_stats_withconfig(config)
         self.data_format(is_train = True)
         self.construct_model()
 
-                                                                                                               
+
         if not train:
             return
-        
+
     def reset_stats_withconfig(self, config):
         set_seeds(self.args.seed)
         self.config = self.args.config = config
@@ -102,7 +102,7 @@ class classical_methods(object, metaclass=abc.ABCMeta):
                 rmse *= y_info['std']
             return (mae,r2,rmse), ("MAE", "R2", "RMSE")
         elif self.is_binclass:
-                                                      
+
             predictions = check_softmax(predictions)
             accuracy = skm.accuracy_score(labels, predictions.argmax(axis=-1))
             avg_recall = skm.balanced_accuracy_score(labels, predictions.argmax(axis=-1))
@@ -112,14 +112,14 @@ class classical_methods(object, metaclass=abc.ABCMeta):
             auc = skm.roc_auc_score(labels, predictions[:, 1])
             return (accuracy, avg_recall, avg_precision, f1_score, log_loss, auc), ("Accuracy", "Avg_Recall", "Avg_Precision", "F1", "LogLoss", "AUC")
         elif self.is_multiclass:
-                                                      
+
             predictions = check_softmax(predictions)
             accuracy = skm.accuracy_score(labels, predictions.argmax(axis=-1))
             avg_recall = skm.balanced_accuracy_score(labels, predictions.argmax(axis=-1))
             avg_precision = skm.precision_score(labels, predictions.argmax(axis=-1), average='macro')
             f1_score = skm.f1_score(labels, predictions.argmax(axis=-1), average='macro')
             log_loss = skm.log_loss(labels, predictions, labels=y_info['classes'])
-            
+
             present_classes = np.unique(labels)
             if len(present_classes) < 2:
                 auc = float("nan")
@@ -129,7 +129,7 @@ class classical_methods(object, metaclass=abc.ABCMeta):
                 predictions = predictions[:, class_indices]
                 labels = labels[:, class_indices]
                 auc = skm.roc_auc_score(labels, predictions, labels=present_classes, average='macro', multi_class='ovr')
-            
+
             return (accuracy, avg_recall, avg_precision, f1_score, log_loss, auc), ("Accuracy", "Avg_Recall", "Avg_Precision", "F1", "LogLoss", "AUC")
         else:
             raise ValueError("Unknown tabular task type")

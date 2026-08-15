@@ -1,4 +1,4 @@
-                       
+
 from typing import Literal
 
 import numpy as np
@@ -11,49 +11,39 @@ class SmoothClampedReLU(nn.Module):
     def __init__(self, beta=50):
         super(SmoothClampedReLU, self).__init__()
         self.beta = beta
-        
+
     def forward(self, x):
-                                                                  
+
         activated = F.softplus(x, beta=self.beta)
-                                                                     
-                                                     
+
+
         clamped = activated - F.softplus(activated - 1, beta=self.beta)
-        
+
         return clamped
 
 def float_x(data):
-                                   
+
     return np.float32(data)
 
 def matrix_power(M, power):
-\
-\
-\
-\
-\
-       
-    return stable_matrix_power(M, power)
-                           
-                                                                  
 
-                           
-                                     
-                     
-                                               
-                             
-                                                           
-                     
-                         
-           
-                                                                              
-    
+    return stable_matrix_power(M, power)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def stable_matrix_power(M, power):
-\
-\
-\
-\
-\
-       
+
     if len(M.shape) == 2:
         assert M.shape[0] == M.shape[1], "Matrix must be square"
         if M.shape[0] < 700:

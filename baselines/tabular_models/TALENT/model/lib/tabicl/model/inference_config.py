@@ -7,17 +7,7 @@ import torch
 
 
 class MgrConfig:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     _ALLOWED_KEYS = {"min_batch_size", "safety_factor", "offload", "auto_offload_pct", "device", "use_amp", "verbose"}
     _TYPE_SPECS = {
@@ -55,15 +45,15 @@ class MgrConfig:
             self._validate_and_set(key, value)
 
     def keys(self):
-                                                      
+
         return {k for k in self._ALLOWED_KEYS if hasattr(self, k)}
 
     def items(self):
-                                           
+
         return {k: getattr(self, k) for k in self.keys()}.items()
 
     def _validate_and_set(self, key, value):
-                                                               
+
         if key not in self._ALLOWED_KEYS:
             raise KeyError(f"Invalid config key: {key}. Allowed keys: {self._ALLOWED_KEYS}")
 
@@ -81,7 +71,7 @@ class MgrConfig:
         setattr(self, key, value)
 
     def __iter__(self):
-                                                                     
+
         return iter(k for k in self._ALLOWED_KEYS if hasattr(self, k))
 
     def __getitem__(self, key):
@@ -90,21 +80,7 @@ class MgrConfig:
         return getattr(self, key, None)
 
     def get(self, key, default=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         try:
             value = self[key]
             return default if value is None else value
@@ -112,7 +88,7 @@ class MgrConfig:
             raise KeyError(f"Invalid config key: {key}. Allowed keys: {self._ALLOWED_KEYS}")
 
     def update(self, other):
-                                                                             
+
         if not isinstance(other, (dict, MgrConfig)):
             raise TypeError(f"Expected dict or MgrConfig, got {type(other)}")
 
@@ -123,7 +99,7 @@ class MgrConfig:
 
 @dataclass
 class InferenceConfig:
-                                            
+
 
     COL_CONFIG: MgrConfig = None
     ROW_CONFIG: MgrConfig = None
@@ -176,18 +152,7 @@ class InferenceConfig:
             raise TypeError(f"ICL_CONFIG must be a dict or MgrConfig, got {type(self.ICL_CONFIG)}")
 
     def update_from_dict(self, config_dict: Dict[str, Dict]):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         allowed_keys = {"COL_CONFIG", "ROW_CONFIG", "ICL_CONFIG"}
         for key in config_dict:
             if key not in allowed_keys:

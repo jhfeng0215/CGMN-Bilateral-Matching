@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as nn_init
 from torch import Tensor
-                                                                                                   
+
 def reglu(x):
     a, b = x.chunk(2, dim=-1)
     return a * F.relu(b)
@@ -39,7 +39,7 @@ def get_activation_fn(name):
     )
 
 
-    
+
 class Tokenizer(nn.Module):
     category_offsets: ty.Optional[Tensor]
 
@@ -62,10 +62,10 @@ class Tokenizer(nn.Module):
             self.category_embeddings = nn.Embedding(sum(categories), d_token)
             nn_init.kaiming_uniform_(self.category_embeddings.weight, a=math.sqrt(5))
 
-                                       
+
         self.weight = nn.Parameter(Tensor(d_numerical + 1, d_token))
         self.bias = nn.Parameter(Tensor(d_bias, d_token)) if bias else None
-                                                     
+
         nn_init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
             nn_init.kaiming_uniform_(self.bias, a=math.sqrt(5))
@@ -80,7 +80,7 @@ class Tokenizer(nn.Module):
         x_some = x_num if x_cat is None else x_cat
         assert x_some is not None
         x_num = torch.cat(
-            [torch.ones(len(x_some), 1, device=x_some.device)]         
+            [torch.ones(len(x_some), 1, device=x_some.device)]
             + ([] if x_num is None else [x_num]),
             dim=1,
         )
@@ -119,7 +119,7 @@ class MultiheadAttention(nn.Module):
 
         for m in [self.W_q, self.W_k, self.W_v]:
             if initialization == 'xavier' and (n_heads > 1 or m is not self.W_v):
-                                                                                  
+
                 nn_init.xavier_uniform_(m.weight, gain=1 / math.sqrt(2))
             nn_init.zeros_(m.bias)
         if self.W_out is not None:
@@ -173,22 +173,16 @@ class MultiheadAttention(nn.Module):
 
 
 class Transformer(nn.Module):
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
         *,
-                   
+
         d_numerical: int,
         categories: ty.Optional[ty.List[int]],
         token_bias: bool,
-                     
+
         n_layers: int,
         d_token: int,
         n_heads: int,
@@ -199,10 +193,10 @@ class Transformer(nn.Module):
         activation: str,
         prenormalization: bool,
         initialization: str,
-                   
+
         kv_compression: ty.Optional[float],
         kv_compression_sharing: ty.Optional[str],
-         
+
         d_out: int,
     ) -> None:
         assert (kv_compression is None) ^ (kv_compression_sharing is not None)
@@ -290,7 +284,7 @@ class Transformer(nn.Module):
         return x
 
     def forward(self, x_num: Tensor, x_cat: ty.Optional[Tensor]) -> Tensor:
-        
+
 
         x = self.tokenizer(x_num, x_cat)
 
@@ -300,7 +294,7 @@ class Transformer(nn.Module):
 
             x_residual = self._start_residual(x, layer, 0)
             x_residual = layer['attention'](
-                                                                            
+
                 (x_residual[:, :1] if is_last_layer else x_residual),
                 x_residual,
                 *self._get_kv_compressions(layer),

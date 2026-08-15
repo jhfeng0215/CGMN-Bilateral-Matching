@@ -1,6 +1,6 @@
 from .class_conversion import ClassificationConverter
 from .eigenpro import KernelModel
-    
+
 import torch, numpy as np
 from .kernels import Kernel, LaplaceKernel, ProductLaplaceKernel, SumPowerLaplaceKernel, LightLaplaceKernel
 from tqdm.contrib import tenumerate
@@ -13,185 +13,12 @@ import time
 from typing import Union
 
 class RFM(torch.nn.Module):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
 
-    def __init__(self, kernel: Union[Kernel, str], iters=5, bandwidth=10., exponent=1., bandwidth_mode='constant', 
-                 agop_power=0.5, device=None, diag=False, verbose=True, mem_gb=None, tuning_metric='mse', 
+
+    def __init__(self, kernel: Union[Kernel, str], iters=5, bandwidth=10., exponent=1., bandwidth_mode='constant',
+                 agop_power=0.5, device=None, diag=False, verbose=True, mem_gb=None, tuning_metric='mse',
                  categorical_info=None, fast_categorical=True, class_converter=None, time_limit_s=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         super().__init__()
         if isinstance(kernel, str):
             kernel = self.kernel_from_str(kernel, bandwidth=bandwidth, exponent=exponent)
@@ -200,10 +27,10 @@ class RFM(torch.nn.Module):
         self.M = None
         self.sqrtM = None
         self.iters = iters
-        self.diag = diag                                                 
+        self.diag = diag
         self.device = device if device is not None else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.agop_power = 0.5                         
-        self.max_lstsq_size = 70_000                                               
+        self.agop_power = 0.5
+        self.max_lstsq_size = 70_000
         self.bandwidth_mode = bandwidth_mode
         self.proba_beta = 500
         self.verbose = verbose
@@ -211,8 +38,8 @@ class RFM(torch.nn.Module):
         self.use_sqrtM = self.kernel_obj.use_sqrtM
         self.class_converter = class_converter
         self.time_limit_s = time_limit_s
-        
-        if categorical_info is not None and fast_categorical: 
+
+        if categorical_info is not None and fast_categorical:
             if isinstance(self.kernel_obj, ProductLaplaceKernel):
                 self.set_categorical_indices(**categorical_info)
             else:
@@ -221,61 +48,17 @@ class RFM(torch.nn.Module):
         if mem_gb is not None:
             self.mem_gb = mem_gb
         elif torch.cuda.is_available():
-                                                                 
-            self.mem_gb = torch.cuda.get_device_properties(self.device).total_memory//1024**3 - 1 
+
+            self.mem_gb = torch.cuda.get_device_properties(self.device).total_memory//1024**3 - 1
         else:
             self.mem_gb = 8
-        
+
     def kernel(self, x, z):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         return self.kernel_obj.get_kernel_matrix(x, z, self.sqrtM if self.use_sqrtM else self.M)
 
     def kernel_from_str(self, kernel_str, bandwidth, exponent):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if kernel_str in ['laplace', 'l2']:
             return LaplaceKernel(bandwidth=bandwidth, exponent=exponent)
         elif kernel_str in ['l2_high_dim', 'l2_light']:
@@ -286,21 +69,9 @@ class RFM(torch.nn.Module):
             return SumPowerLaplaceKernel(bandwidth=bandwidth, exponent=exponent)
         else:
             raise ValueError(f"Invalid kernel: {kernel_str}")
-        
+
     def update_M(self, samples):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         samples = samples.to(self.device)
         self.centers = self.centers.to(self.device)
 
@@ -319,65 +90,23 @@ class RFM(torch.nn.Module):
         agop_func = self.kernel_obj.get_agop_diag if self.diag else self.kernel_obj.get_agop
         agop = agop_func(x=self.centers, z=samples, coefs=self.weights.t(), mat=self.sqrtM if self.use_sqrtM else self.M, center_grads=self.center_grads)
         return agop
-    
+
     def reset_adaptive_bandwidth(self):
-\
-\
-\
-\
-\
-           
+
         self.kernel_obj._reset_adaptive_bandwidth()
-        return 
+        return
 
     def tensor_copy(self, tensor):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if tensor is None:
             return None
         elif self.keep_device or tensor.device.type == 'cpu':
             return tensor.clone()
         else:
             return tensor.cpu()
-        
+
     def set_categorical_indices(self, numerical_indices, categorical_indices, categorical_vectors, device=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if numerical_indices is None and categorical_indices is None and categorical_vectors is None:
             if self.verbose:
                 print("No categorical indices provided, ignoring")
@@ -390,41 +119,9 @@ class RFM(torch.nn.Module):
         return
 
     def update_best_params(self, best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth, current_metric, current_iter):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-                                                                               
-                                                                                                                                                           
+
+
+
         maximize_metric = Metric.from_name(self.tuning_metric).should_maximize
         if maximize_metric and current_metric > best_metric:
             best_metric = current_metric
@@ -443,36 +140,12 @@ class RFM(torch.nn.Module):
             best_sqrtM = self.tensor_copy(self.sqrtM)
 
         return best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth
-        
+
     def fit_predictor(self, centers, targets, bs=None, lr_scale=1, solver='solve', **kwargs):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-        
+
+
         if self.bandwidth_mode == 'adaptive':
-                                                                         
+
             print("Resetting adaptive bandwidth")
             self.reset_adaptive_bandwidth()
 
@@ -490,44 +163,25 @@ class RFM(torch.nn.Module):
             else:
                 initial_weights = None
 
-            self.weights = self.fit_predictor_eigenpro(centers, targets, bs=bs, lr_scale=lr_scale, 
+            self.weights = self.fit_predictor_eigenpro(centers, targets, bs=bs, lr_scale=lr_scale,
                                                        initial_weights=initial_weights, **kwargs)
         else:
             self.weights = self.fit_predictor_lstsq(centers, targets, solver=solver)
 
     def fit_predictor_lstsq(self, centers, targets, solver='solve'):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         assert(len(centers)==len(targets))
 
         if centers.device != self.device:
             centers = centers.to(self.device)
             targets = targets.to(self.device)
 
-        kernel_matrix = self.kernel(centers, centers)    
+        kernel_matrix = self.kernel(centers, centers)
 
         if self.reg > 0:
             kernel_matrix.diagonal().add_(self.reg)
-        
-        
+
+
         if solver == 'solve':
             out = torch.linalg.solve(kernel_matrix, targets)
         elif solver == 'cholesky':
@@ -538,58 +192,22 @@ class RFM(torch.nn.Module):
             out = torch.linalg.lu_solve(P, L, U, targets)
         else:
             raise ValueError(f"Invalid solver: {solver}")
-        
+
         return out
 
     def fit_predictor_eigenpro(self, centers, targets, bs, lr_scale, initial_weights=None, **kwargs):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         n_classes = 1 if targets.dim()==1 else targets.shape[-1]
         ep_model = KernelModel(self.kernel, centers, n_classes, device=self.device)
         if initial_weights is not None:
             ep_model.weight = initial_weights.to(ep_model.weight.device, dtype=ep_model.weight.dtype)
-        _ = ep_model.fit(centers, targets, verbose=self.verbose, mem_gb=self.mem_gb, bs=bs, 
+        _ = ep_model.fit(centers, targets, verbose=self.verbose, mem_gb=self.mem_gb, bs=bs,
                          lr_scale=lr_scale, classification=self.classification, **kwargs)
         return ep_model.weight.clone()
 
     @with_env_var("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     def predict(self, samples, max_batch_size=50_000):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         samples, original_format = self.validate_samples(samples)
         out = []
         for i in range(0, samples.shape[0], max_batch_size):
@@ -599,29 +217,7 @@ class RFM(torch.nn.Module):
         return self.convert_to_format(out, original_format)
 
     def validate_samples(self, samples):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         original_format = {}
         if isinstance(samples, np.ndarray):
             samples = torch.from_numpy(samples)
@@ -633,57 +229,16 @@ class RFM(torch.nn.Module):
         else:
             raise ValueError(f"Invalid sample type: {type(samples)}")
         return samples.to(self.device), original_format
-    
+
     def convert_to_format(self, tensor, original_format):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if original_format['type'] == 'numpy':
             return tensor.cpu().numpy()
         elif original_format['type'] == 'torch':
             return tensor.to(original_format['device'])
 
     def validate_data(self, train_data, val_data):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         assert train_data is not None, "Train data must be provided"
         assert val_data is not None, "Validation data must be provided"
 
@@ -701,31 +256,9 @@ class RFM(torch.nn.Module):
             y_train = y_train.unsqueeze(-1)
 
         return X_train, y_train, X_val, y_val
-    
+
     def adapt_params_to_data(self, n, d):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if self.tuning_metric == 'accuracy' and self.early_stop_rfm:
             if n <= 30_000:
@@ -733,44 +266,44 @@ class RFM(torch.nn.Module):
             else:
                 self.early_stop_multiplier = min(self.early_stop_multiplier, 1.006)
             print(f"More aggressive early stop multiplier for accuracy: {self.early_stop_multiplier}")
-            
 
-        self.keep_device = d > n                                                        
+
+        self.keep_device = d > n
         ep_epochs = 8
         total_points_to_sample = 20_000
         iters_to_use = 4
         if isinstance(self.kernel_obj, ProductLaplaceKernel):
             ep_epochs = 2
-            if n > 1000:                                                               
+            if n > 1000:
                 if n <= 10_000:
-                                                               
+
                     pass
                 elif 10_000 < n <= 20_000 and d <= 2000:
-                                                                        
+
                     total_points_to_sample = min(total_points_to_sample, 10_000)
                     iters_to_use = min(iters_to_use, 4)
                 elif 20_000 < n <= 50_000 and d <= 2000:
-                                                                        
+
                     total_points_to_sample = min(total_points_to_sample, 2500)
                     iters_to_use = min(iters_to_use, 2)
                 elif 10_000 < n <= 20_000 and d <= 3000:
-                                                                      
+
                     total_points_to_sample = 2500
                     iters_to_use = min(iters_to_use, 2)
                 elif d < 1000:
-                                                                
+
                     total_points_to_sample = 2000
                     iters_to_use = min(iters_to_use, 1)
                 elif d < 4000:
-                                                                
+
                     total_points_to_sample = 1000
                     iters_to_use = min(iters_to_use, 1)
                 else:
-                                                
+
                     total_points_to_sample = 250
                     iters_to_use = min(iters_to_use, 1)
         if n >= 70_000:
-                                                                           
+
             iters_to_use = min(iters_to_use, 2)
 
         ep_epochs = ep_epochs if self.ep_epochs is None else self.ep_epochs
@@ -781,11 +314,11 @@ class RFM(torch.nn.Module):
         self.total_points_to_sample = total_points_to_sample
         self.ep_epochs = ep_epochs
         return
-    
-    def _initialize_fit_parameters(self, iters, method, reg, verbose, M_batch_size, total_points_to_sample, 
-                                   ep_epochs, tuning_metric, early_stop_rfm, early_stop_multiplier, 
+
+    def _initialize_fit_parameters(self, iters, method, reg, verbose, M_batch_size, total_points_to_sample,
+                                   ep_epochs, tuning_metric, early_stop_rfm, early_stop_multiplier,
                                    center_grads, prefit_eigenpro, **kwargs):
-                                                       
+
         self.verbose = verbose if verbose is not None else self.verbose
         self.fit_using_eigenpro = (method.lower()=='eigenpro')
         self.prefit_eigenpro = prefit_eigenpro
@@ -803,7 +336,7 @@ class RFM(torch.nn.Module):
         assert 'diag' not in kwargs, "diag should be set in the constructor"
 
     def _compute_validation_metrics(self, X_train, y_train, X_val, y_val, iteration_num=None, is_final=False, **kwargs):
-                                                                
+
 
         metric = Metric.from_name(self.tuning_metric)
         if 'agop' in metric.required_quantities:
@@ -815,45 +348,29 @@ class RFM(torch.nn.Module):
         return val_metrics
 
     def _should_early_stop(self, current_metric, best_metric):
-                                                      
+
         if self.minimize:
             return current_metric > best_metric * self.early_stop_multiplier
         else:
             return current_metric < best_metric / self.early_stop_multiplier
 
-                                                                                                               
-    @with_env_var("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True") 
-    def fit(self, train_data, val_data=None, iters=None, method='lstsq', reg=None, center_grads=False,
-            verbose=False, M_batch_size=None, ep_epochs=None, return_best_params=True, bs=None, 
-            return_Ms=False, lr_scale=1, total_points_to_sample=None, solver='solve', 
-            tuning_metric=None, prefit_eigenpro=True, early_stop_rfm=True, early_stop_multiplier=1.1, 
-            callback=None, **kwargs):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
 
-                               
+    @with_env_var("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    def fit(self, train_data, val_data=None, iters=None, method='lstsq', reg=None, center_grads=False,
+            verbose=False, M_batch_size=None, ep_epochs=None, return_best_params=True, bs=None,
+            return_Ms=False, lr_scale=1, total_points_to_sample=None, solver='solve',
+            tuning_metric=None, prefit_eigenpro=True, early_stop_rfm=True, early_stop_multiplier=1.1,
+            callback=None, **kwargs):
+
+
+
         self._initialize_fit_parameters(iters, method, reg, verbose, M_batch_size, total_points_to_sample,
                                        ep_epochs, tuning_metric, early_stop_rfm, early_stop_multiplier,
                                        center_grads, prefit_eigenpro, **kwargs)
-        
-        
 
-                                   
+
+
+
         X_train, y_train, X_val, y_val = self.validate_data(train_data, val_data)
         n, d = X_train.shape
         print("="*70)
@@ -866,8 +383,8 @@ class RFM(torch.nn.Module):
 
 
         self.adapt_params_to_data(n, d)
-        
-                                       
+
+
         metrics, Ms = [], []
         best_alphas, best_M, best_sqrtM = None, None, None
         best_metric = float('inf') if self.tuning_metric == 'mse' else 0
@@ -877,31 +394,31 @@ class RFM(torch.nn.Module):
 
         start_time = time.time()
 
-                            
+
         for i in range(self.iters):
-                              
+
             if i > 0 and self.time_limit_s is not None and (i+1)/i*(time.time()-start_time) > self.time_limit_s:
-                break                                                  
+                break
 
 
             if callback is not None:
                 callback(iteration=i)
 
             start = time.time()
-            self.fit_predictor(X_train, y_train, X_val=X_val, y_val=y_val, 
-                               bs=bs, lr_scale=lr_scale, solver=solver, 
+            self.fit_predictor(X_train, y_train, X_val=X_val, y_val=y_val,
+                               bs=bs, lr_scale=lr_scale, solver=solver,
                                **kwargs)
-                        
-                                        
+
+
             val_metrics = self._compute_validation_metrics(X_train, y_train, X_val, y_val, iteration_num=i, **kwargs)
 
-                                              
+
             if return_best_params:
                 best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth = self.update_best_params(
-                    best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth, 
+                    best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth,
                     val_metrics[self.tuning_metric], i)
-             
-                                      
+
+
             if self.early_stop_rfm:
                 val_metric = val_metrics[self.tuning_metric]
                 if self._should_early_stop(val_metric, best_metric):
@@ -911,10 +428,10 @@ class RFM(torch.nn.Module):
                     early_stopped = True
                     break
 
-                                      
+
             self.fit_M(X_train, y_train.shape[-1], **kwargs)
             del self.weights
-            
+
             if return_Ms:
                 Ms.append(self.tensor_copy(self.M))
                 metrics.append(val_metrics[self.tuning_metric])
@@ -924,17 +441,17 @@ class RFM(torch.nn.Module):
         if callback is not None:
             callback(iteration=self.iters)
 
-                                                              
+
         if not early_stopped:
-            self.fit_predictor(X_train, y_train, X_val=X_val, y_val=y_val, bs=bs, **kwargs)        
+            self.fit_predictor(X_train, y_train, X_val=X_val, y_val=y_val, bs=bs, **kwargs)
             final_val_metrics = self._compute_validation_metrics(X_train, y_train, X_val, y_val, is_final=True, **kwargs)
 
             if return_best_params:
                 best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth = self.update_best_params(
-                    best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth, 
+                    best_metric, best_alphas, best_M, best_sqrtM, best_iter, best_bandwidth,
                     final_val_metrics[self.tuning_metric], iters)
-                
-                                 
+
+
         if return_best_params:
             self.M = None if best_M is None else best_M.to(self.device)
             self.sqrtM = None if best_sqrtM is None else best_sqrtM.to(self.device)
@@ -947,16 +464,16 @@ class RFM(torch.nn.Module):
             print(f"{self.best_iter=}")
 
         if kwargs.get('get_agop_best_model', False):
-                                    
+
             self.agop_best_model = self.fit_M(X_train, y_train, inplace=False, **kwargs)
 
         return Ms if return_Ms else None
-    
-    def _compute_optimal_M_batch(self, n, c, d, scalar_size=4, mem_constant=2., max_batch_size=10_000, 
+
+    def _compute_optimal_M_batch(self, n, c, d, scalar_size=4, mem_constant=2., max_batch_size=10_000,
                             max_cheap_batch_size=20_000, light_kernels=Union[LaplaceKernel, LightLaplaceKernel]):
-                                                       
+
         if self.device in ['cpu', torch.device('cpu')] or isinstance(self.kernel_obj, light_kernels):
-                                                                                 
+
             M_batch_size = max(min(n, max_cheap_batch_size), 1)
         else:
             total_memory_possible = torch.cuda.get_device_properties(self.device).total_memory
@@ -966,50 +483,20 @@ class RFM(torch.nn.Module):
             M_batch_size = min(M_batch_size, max_batch_size)
         print(f"Optimal M batch size: {M_batch_size}")
         return M_batch_size
-    
+
     def fit_M(self, samples, num_classes, M_batch_size=None, inplace=True, **kwargs):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-        
+
+
         n, d = samples.shape
         M = torch.zeros_like(self.M) if self.M is not None else (
-            torch.zeros(d, dtype=samples.dtype, device=self.device) 
+            torch.zeros(d, dtype=samples.dtype, device=self.device)
             if self.diag else torch.zeros(d, d, dtype=samples.dtype, device=self.device))
-        
 
-        if M_batch_size is None: 
+
+        if M_batch_size is None:
             BYTES_PER_SCALAR = samples.element_size()
             M_batch_size = self._compute_optimal_M_batch(n, num_classes, d, scalar_size=BYTES_PER_SCALAR)
-        
+
         batches = torch.arange(n).split(M_batch_size)
 
         num_batches = 1 + self.total_points_to_sample//M_batch_size
@@ -1023,47 +510,21 @@ class RFM(torch.nn.Module):
         else:
             for bids in batches:
                 M.add_(self.update_M(samples[bids]))
-        
+
         scaled_M = M / (M.max() + 1e-30)
         if self.use_sqrtM:
             sqrtM = matrix_power(scaled_M, self.agop_power)
         else:
             sqrtM = None
-        
+
         if inplace:
             self.M = scaled_M
             self.sqrtM = sqrtM
         else:
             return scaled_M
-        
+
     def score(self, samples, targets, metrics):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         metrics = Metrics(metrics)
         assert len(targets.shape) == 2 and targets.shape[1] >= 1
@@ -1078,36 +539,9 @@ class RFM(torch.nn.Module):
             kwargs['y_true_class'] = self.class_converter.numerical_to_labels(targets)
 
         return metrics.compute(**kwargs)
-    
+
     @with_env_var("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     def predict_proba(self, samples, eps=1e-3):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-        predictions = self.predict(samples) 
+
+        predictions = self.predict(samples)
         return self.class_converter.numerical_to_probas(predictions, eps=eps)

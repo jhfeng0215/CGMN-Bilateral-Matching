@@ -14,96 +14,7 @@ from .tree_utils import get_param_tree
 
 
 class xRFM:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, rfm_params=None, min_subset_size=60_000,
                  max_depth=None, device=None, n_trees=1, n_tree_iters=0,
@@ -129,11 +40,11 @@ class xRFM:
         self.time_limit_s = time_limit_s
         self.n_threads = n_threads
 
-                                                               
+
         self.min_val_size = 1500
         self.val_size_frac = 0.2
 
-                                                          
+
         print(default_rfm_params)
         if default_rfm_params is None:
             self.default_rfm_params = {
@@ -161,92 +72,39 @@ class xRFM:
             self.rfm_params['return_best_params'] = True
 
     def tree_copy(self, tree):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         return copy.deepcopy(tree)
 
     def _generate_random_projection(self, dim):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         projection = torch.randn(dim, device=self.device)
         return projection / torch.norm(projection)
 
     def _generate_projection_from_M(self, dim, M):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-        if M.dim() == 1:                    
+
+        if M.dim() == 1:
             std_devs = torch.sqrt(M)
             projection = torch.normal(0, std_devs).to(self.device)
-        else:                         
-                                                                      
+        else:
+
             z = torch.randn(dim, device=self.device)
 
             try:
                 sqrtM = matrix_power(M, 0.5)
 
-                                                             
+
                 projection = sqrtM @ z
             except:
                 print(f"Matrix power failed, defaulting to random projection")
 
-                                                                     
+
                 projection = torch.randn(dim, device=self.device)
 
-                                  
+
         return projection / torch.norm(projection)
 
     def _collect_leaf_nodes(self, node):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if node['type'] == 'leaf':
             return [node]
 
@@ -256,19 +114,7 @@ class xRFM:
         return left_nodes + right_nodes
 
     def _collect_attr(self, attr_name):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         best_agops = []
         for t in self.trees:
             leaf_nodes = self._collect_leaf_nodes(t)
@@ -276,54 +122,24 @@ class xRFM:
         return best_agops
 
     def collect_best_agops(self):
-\
-\
-\
-\
-\
-\
-\
-           
+
         return self._collect_attr('agop_best_model')
-                         
-                              
-                                                      
-                                                                                  
-                           
+
+
+
+
+
 
     def collect_Ms(self):
-\
-\
-\
-\
-\
-\
-\
-           
+
         return self._collect_attr('M')
 
     def _average_M_across_leaves(self, tree):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         leaf_nodes = self._collect_leaf_nodes(tree)
         leaf_models = [node['model'] for node in leaf_nodes]
 
-                                                 
+
         M_matrices = []
         for model in leaf_models:
             if hasattr(model, 'M') and model.M is not None:
@@ -333,63 +149,49 @@ class xRFM:
                                                                                                       device=self.device)
                 M_matrices.append(identity)
 
-        if M_matrices[0].dim() == 1:                    
+        if M_matrices[0].dim() == 1:
             avg_M = torch.stack(M_matrices).mean(dim=0)
-        else:                         
+        else:
             avg_M = torch.stack(M_matrices).mean(dim=0)
 
         return avg_M
 
     def _get_balanced_split(self, projections, train_median):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-                       
+
+
         left_mask = projections < train_median
         right_mask = projections > train_median
         median_mask = projections == train_median
 
-                                      
+
         n_left, n_right = left_mask.sum(), right_mask.sum()
 
-                                                                       
+
         if n_left != n_right and median_mask.any():
             median_indices = torch.where(median_mask)[0]
 
             if n_left < n_right:
-                                                 
+
                 n_to_add = min(median_indices.size(0), n_right - n_left)
                 left_mask[median_indices[:n_to_add]] = True
             else:
-                                                  
+
                 n_to_add = min(median_indices.size(0), n_left - n_right)
                 right_mask[median_indices[:n_to_add]] = True
 
-                                                                     
+
             if n_to_add > 0:
                 median_mask[median_indices[:n_to_add]] = False
 
-                                                                                     
+
         if median_mask.any():
             median_indices = torch.where(median_mask)[0]
             n_median = median_indices.size(0)
-                                                                                          
+
             left_half = median_indices[:n_median // 2]
             right_half = median_indices[n_median // 2:]
 
-                          
+
             left_mask[left_half] = True
             right_mask[right_half] = True
 
@@ -400,45 +202,19 @@ class xRFM:
 
     def _build_tree(self, X, y, X_val, y_val, train_indices=None, depth=0, avg_M=None, is_root=False,
                     time_limit_s=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         start_time = time.time()
         n_samples = X.shape[0]
         if train_indices is None:
             train_indices = torch.arange(n_samples, device=self.device)
 
-                                   
+
         if (n_samples <= self.min_subset_size) or (self.max_depth is not None and depth >= self.max_depth):
-            if not is_root:                                                             
+            if not is_root:
                 print("Refilling validation set, because at least one split has been made.")
                 X, y, X_val, y_val, train_indices = self._refill_val_set(X, y, X_val, y_val, train_indices)
 
-                                                          
+
             model = RFM(**self.rfm_params['model'], tuning_metric=self.tuning_metric,
                         categorical_info=self.categorical_info, device=self.device, time_limit_s=time_limit_s,
                         **self.extra_rfm_params_)
@@ -446,7 +222,7 @@ class xRFM:
             model.fit((X, y), (X_val, y_val), **self.rfm_params['fit'], callback=self.callback)
             return {'type': 'leaf', 'model': model, 'train_indices': train_indices, 'is_root': is_root}
 
-                                    
+
         if avg_M is not None and self.split_method == 'random_global_agop':
             projection = self._generate_projection_from_M(X.shape[1], avg_M)
         elif self.split_method == 'random_pca':
@@ -456,20 +232,20 @@ class xRFM:
         elif self.split_method == 'linear':
             XtX = X.T @ X
             beta = torch.linalg.solve(XtX + 1e-6 * torch.eye(X.shape[1], device=self.device), X.T @ y)
-            beta = beta.mean(dim=1)                                        
+            beta = beta.mean(dim=1)
             projection = beta / torch.norm(beta)
         elif 'agop_on_subset' in self.split_method:
             print(f"Using {self.split_method} split method")
             sub_time_limit_s = None
             if time_limit_s is not None:
-                                                                                                              
+
                 n_leaves = 2 ** np.ceil(np.log2(n_samples / self.min_subset_size))
                 sub_time_limit_s = 0.5 * time_limit_s / (n_leaves - 1)
             M = self._get_agop_on_subset(X, y, time_limit_s=sub_time_limit_s)
             if self.split_method == 'top_vector_agop_on_subset':
-                                                
+
                 _, _, Vt = torch.linalg.svd(M,
-                                            full_matrices=False)                                                                 
+                                            full_matrices=False)
                 projection = Vt[0]
             elif self.split_method == 'random_agop_on_subset':
                 projection = self._generate_projection_from_M(X.shape[1], M)
@@ -477,28 +253,28 @@ class xRFM:
                 sqrtM = matrix_power(M, 0.5)
                 XM = X @ sqrtM
                 Xb = XM - XM.mean(dim=0, keepdim=True)
-                                                            
+
                 _, _, Vt = torch.linalg.svd(Xb.T @ Xb,
-                                            full_matrices=False)                                               
+                                            full_matrices=False)
                 projection = Vt[0]
         elif self.split_method == 'fixed_vector':
             projection = self.fixed_vector
         else:
             projection = self._generate_random_projection(X.shape[1])
 
-                                                
+
         projections = X @ projection
 
-                                    
+
         train_median = torch.median(projections)
 
-                                                                                            
+
         left_mask, right_mask = self._get_balanced_split(projections, train_median)
 
         X_left, y_left = X[left_mask], y[left_mask]
         X_right, y_right = X[right_mask], y[right_mask]
 
-                                                      
+
         projections_val = X_val @ projection
         left_mask_val = projections_val <= train_median
         right_mask_val = ~left_mask_val
@@ -506,7 +282,7 @@ class xRFM:
         X_val_left, y_val_left = X_val[left_mask_val], y_val[left_mask_val]
         X_val_right, y_val_right = X_val[right_mask_val], y_val[right_mask_val]
 
-                        
+
         left_tree = self._build_tree(X_left, y_left, X_val_left, y_val_left,
                                      train_indices=train_indices[left_mask],
                                      depth=depth + 1,
@@ -533,32 +309,7 @@ class xRFM:
         }
 
     def _refill_val_set(self, X, y, X_val, y_val, train_indices):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if len(X_val) <= self.min_val_size:
             n_orig_val = len(X_val)
@@ -583,36 +334,15 @@ class xRFM:
         return X, y, X_val, y_val, train_indices
 
     def _build_tree_with_iterations(self, X, y, X_val, y_val, time_limit_s=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         avg_M = None
         start_time = time.time()
 
-                                                 
+
         tree = self._build_tree(X, y, X_val, y_val, avg_M=None, is_root=True,
                                 time_limit_s=None if time_limit_s is None else time_limit_s / (1 + self.n_tree_iters))
 
-                                                    
+
         best_val_score = self.score_tree(X_val, y_val, tree)
         best_tree = self.tree_copy(tree)
 
@@ -620,19 +350,19 @@ class xRFM:
 
         for iter in tqdm(range(self.n_tree_iters), desc="Iterating tree"):
             if time_limit_s is not None and (iter + 2) / (iter + 1) * (time.time() - start_time) > time_limit_s:
-                break                                                         
+                break
 
-                                                                       
+
             avg_M = self._average_M_across_leaves(tree)
 
             del tree
 
-                                                      
+
             tree = self._build_tree(X, y, X_val, y_val, avg_M=avg_M, is_root=False,
                                     time_limit_s=None if time_limit_s is None
                                     else (time_limit_s - (time.time() - start_time)) / (self.n_tree_iters - iter))
 
-                                                               
+
             val_score = self.score_tree(X_val, y_val, tree)
             val_scores.append(val_score)
 
@@ -650,32 +380,14 @@ class xRFM:
         return best_tree
 
     def fit(self, X, y, X_val, y_val):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         print(f"Fitting xRFM with {self.n_trees} trees and {self.n_tree_iters} iterations per tree")
 
         if self.n_threads is not None:
             old_n_threads = torch.get_num_threads()
             torch.set_num_threads(self.n_threads)
 
-                                            
+
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X, dtype=torch.float32, device=self.device)
         if not isinstance(X_val, torch.Tensor):
@@ -685,7 +397,7 @@ class xRFM:
         y_val = torch.as_tensor(y_val).to(self.device)
         y_train_and_val = torch.cat([y, y_val], dim=0)
 
-                                                                           
+
         if self.tuning_metric is not None:
             metric = Metric.from_name(self.tuning_metric)
             is_class = not ('reg' in metric.task_types)
@@ -696,7 +408,7 @@ class xRFM:
             is_class = not y.is_floating_point()
             self.tuning_metric = 'brier' if is_class else 'mse'
 
-                                                       
+
         if is_class:
             if y.is_floating_point():
                 if len(y.shape) == 1:
@@ -721,7 +433,7 @@ class xRFM:
             y = y.float()
             y_val = y_val.float()
 
-                                          
+
             if len(y.shape) == 1:
                 y = y.unsqueeze(-1)
             if len(y_val.shape) == 1:
@@ -731,7 +443,7 @@ class xRFM:
 
         self.data_dim = X.shape[1]
 
-                              
+
         self.trees = []
         start_time = time.time()
         for iter in tqdm(range(self.n_trees), desc="Building trees"):
@@ -758,21 +470,7 @@ class xRFM:
 
 
     def score(self, samples, targets):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         metric = Metric.from_name(self.tuning_metric)
         assert len(targets.shape) == 2 and targets.shape[1] >= 2
@@ -788,23 +486,7 @@ class xRFM:
 
 
     def score_tree(self, samples, targets, tree):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         metric = Metric.from_name(self.tuning_metric)
         assert len(targets.shape) == 2 and targets.shape[1] >= 2
@@ -820,19 +502,7 @@ class xRFM:
 
 
     def predict(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if self.trees is None:
             raise ValueError("Model has not been fitted yet.")
 
@@ -840,18 +510,18 @@ class xRFM:
             old_n_threads = torch.get_num_threads()
             torch.set_num_threads(self.n_threads)
 
-                                           
+
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X, dtype=torch.float32, device=self.device)
 
         all_predictions = []
 
-                                        
+
         for tree in self.trees:
             tree_predictions = self._predict_tree(X, tree)
             all_predictions.append(tree_predictions)
 
-                                          
+
         pred = torch.mean(torch.stack(all_predictions), dim=0)
 
         if self.n_threads is not None:
@@ -864,20 +534,7 @@ class xRFM:
 
 
     def predict_proba(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         if self.trees is None:
             raise ValueError("Model has not been fitted yet.")
 
@@ -885,7 +542,7 @@ class xRFM:
             old_n_threads = torch.get_num_threads()
             torch.set_num_threads(self.n_threads)
 
-                                           
+
         if not isinstance(X, torch.Tensor):
             X = torch.tensor(X, dtype=torch.float32, device=self.device)
         all_probas = []
@@ -902,21 +559,7 @@ class xRFM:
 
 
     def _predict_tree(self, X, tree, proba=False):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         X_leaf_groups, X_leaf_group_indices, leaf_nodes = self._get_leaf_groups_and_models_on_samples(X, tree)
         predictions = []
@@ -928,19 +571,12 @@ class xRFM:
             predictions.append(preds)
 
         def reorder_tensor(original_tensor, order_tensor):
-\
-\
-\
-\
-\
-\
-\
-               
-                                                        
-                                                          
+
+
+
             _, sorted_indices = torch.sort(order_tensor)
 
-                                                                   
+
             return original_tensor[sorted_indices]
 
         order = torch.cat(X_leaf_group_indices, dim=0)
@@ -949,26 +585,13 @@ class xRFM:
 
 
     def load_state_dict(self, state_dict, X_train):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         self.rfm_params = state_dict['rfm_params']
         self.categorical_info = state_dict['categorical_info']
 
         self._build_leaf_models_from_param_trees(state_dict['param_trees'])
 
-                                     
+
         for tree in self.trees:
             assert tree['is_root']
             leaf_nodes = self._collect_leaf_nodes(tree)
@@ -980,18 +603,7 @@ class xRFM:
 
 
     def _build_leaf_models_from_param_trees(self, param_trees):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         self.trees = []
 
         def set_leaf_model_single_tree(tree):
@@ -1017,21 +629,7 @@ class xRFM:
 
 
     def get_state_dict(self):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         param_trees = []
         for tree in self.trees:
             param_trees.append(get_param_tree(tree, is_root=True))
@@ -1043,30 +641,12 @@ class xRFM:
 
 
     def _get_agop_on_subset(self, X, y, subset_size=50_000, time_limit_s=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         model = RFM(**self.default_rfm_params['model'], device=self.device, time_limit_s=time_limit_s,
                     **self.extra_rfm_params_)
 
         subset_size = min(subset_size, len(X))
-        subset_train_size = int(subset_size * 0.95)                                                 
+        subset_train_size = int(subset_size * 0.95)
 
         subset_indices = torch.randperm(len(X))
         subset_train_indices = subset_indices[:subset_train_size]
@@ -1088,59 +668,35 @@ class xRFM:
 
 
     def _get_leaf_groups_and_models_on_samples(self, X, tree):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-                                  
+
+
         X_leaf_groups = []
         X_leaf_group_indices = []
         leaf_nodes = []
 
-                                                                    
+
         sample_indices = torch.arange(X.shape[0], device=self.device)
         stack = [(X, sample_indices, tree)]
 
-                                         
+
         while stack:
             current_X, current_indices, current_node = stack.pop()
 
-                                                             
+
             if current_node['type'] == 'leaf':
                 X_leaf_groups.append(current_X)
                 X_leaf_group_indices.append(current_indices)
                 leaf_nodes.append(current_node)
                 continue
 
-                                                              
+
             projections = current_X @ current_node['split_direction']
 
-                                                      
+
             left_mask = projections <= current_node['split_point']
             right_mask = ~left_mask
 
-                                                                                        
+
             if right_mask.sum() > 0:
                 stack.append((
                     current_X[right_mask],
@@ -1148,7 +704,7 @@ class xRFM:
                     current_node['right']
                 ))
 
-                                     
+
             if left_mask.sum() > 0:
                 stack.append((
                     current_X[left_mask],

@@ -3,8 +3,8 @@ import torch.nn.functional as F
 from torch import nn, einsum
 
 from einops import rearrange, repeat
-                                                                    
-         
+
+
 
 def exists(val):
     return val is not None
@@ -12,7 +12,7 @@ def exists(val):
 def default(val, d):
     return val if exists(val) else d
 
-         
+
 
 class Residual(nn.Module):
     def __init__(self, fn):
@@ -31,7 +31,7 @@ class PreNorm(nn.Module):
     def forward(self, x, **kwargs):
         return self.fn(self.norm(x), **kwargs)
 
-           
+
 
 class GEGLU(nn.Module):
     def forward(self, x):
@@ -82,7 +82,7 @@ class Attention(nn.Module):
         out = rearrange(out, 'b h n d -> b n (h d)', h = h)
         return self.to_out(out), attn
 
-             
+
 
 class Transformer(nn.Module):
     def __init__(
@@ -112,9 +112,9 @@ class Transformer(nn.Module):
 
             x = x + attn_out
             x = ff(x) + x
-        
+
         return x
-     
+
 
 class MLP(nn.Module):
     def __init__(self, dims, act = None):
@@ -137,7 +137,7 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.mlp(x)
 
-            
+
 
 class TabTransformerModel(nn.Module):
     def __init__(
@@ -157,7 +157,7 @@ class TabTransformerModel(nn.Module):
         attn_dropout = 0.,
         ff_dropout = 0.,
         use_shared_categ_embed = True,
-        shared_categ_dim_divisor = 8.                                                                       
+        shared_categ_dim_divisor = 8.
     ):
         super().__init__()
 
@@ -167,12 +167,12 @@ class TabTransformerModel(nn.Module):
             assert all(map(lambda n: n > 0, categories)), 'number of each category must be positive'
             assert len(categories) + num_continuous > 0, 'input shape must not be null'
 
-                                             
+
 
             self.num_categories = len(categories)
             self.num_unique_categories = sum(categories)
 
-                                          
+
 
         self.num_special_tokens = num_special_tokens
         total_tokens = self.num_unique_categories + num_special_tokens
@@ -181,7 +181,7 @@ class TabTransformerModel(nn.Module):
 
             self.category_embed = nn.Embedding(total_tokens, dim - shared_embed_dim)
 
-                                                
+
 
             self.use_shared_categ_embed = use_shared_categ_embed
 
@@ -189,14 +189,14 @@ class TabTransformerModel(nn.Module):
                 self.shared_category_embed = nn.Parameter(torch.zeros(self.num_categories, shared_embed_dim))
                 nn.init.normal_(self.shared_category_embed, std = 0.02)
 
-                                                                                                                        
+
 
             if self.num_unique_categories > 0:
                 categories_offset = F.pad(torch.tensor(list(categories)), (1, 0), value = num_special_tokens)
                 categories_offset = categories_offset.cumsum(dim = -1)[:-1]
                 self.register_buffer('categories_offset', categories_offset)
 
-                    
+
 
         self.num_continuous = num_continuous
 
@@ -207,7 +207,7 @@ class TabTransformerModel(nn.Module):
 
             self.norm = nn.LayerNorm(num_continuous)
 
-                     
+
 
         self.transformer = Transformer(
             dim = dim,
@@ -218,7 +218,7 @@ class TabTransformerModel(nn.Module):
             ff_dropout = ff_dropout
         )
 
-                       
+
 
         input_size = (dim * self.num_categories) + num_continuous
 

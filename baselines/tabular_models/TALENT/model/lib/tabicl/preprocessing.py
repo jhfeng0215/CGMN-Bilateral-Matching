@@ -24,19 +24,7 @@ from sklearn.utils.validation import check_is_fitted
 
 
 class RecursionLimitManager:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, limit):
         self.limit = limit
@@ -49,51 +37,19 @@ class RecursionLimitManager:
 
     def __exit__(self, type, value, traceback):
         sys.setrecursionlimit(self.original_limit)
-        return False                                        
+        return False
 
 
 class TransformToNumerical(TransformerMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
 
     def fit(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-        if not hasattr(X, "columns"):                                                                        
-                          
+
+        if not hasattr(X, "columns"):
+
             self.tfm_ = FunctionTransformer()
             return self
 
@@ -132,75 +88,25 @@ class TransformToNumerical(TransformerMixin, BaseEstimator):
         return self
 
     def transform(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         return self.tfm_.transform(X)
 
 
 class UniqueFeatureFilter(TransformerMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, threshold: int = 1):
         self.threshold = threshold
 
     def fit(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         X = self._validate_data(X)
 
-                                                          
+
         if X.shape[0] <= self.threshold:
             self.features_to_keep_ = np.ones(self.n_features_in_, dtype=bool)
         else:
-                                                                                 
+
             self.features_to_keep_ = np.array(
                 [len(np.unique(X[:, i])) > self.threshold for i in range(self.n_features_in_)]
             )
@@ -210,18 +116,7 @@ class UniqueFeatureFilter(TransformerMixin, BaseEstimator):
         return self
 
     def transform(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         check_is_fitted(self)
         X = self._validate_data(X, reset=False)
 
@@ -229,106 +124,50 @@ class UniqueFeatureFilter(TransformerMixin, BaseEstimator):
 
 
 class OutlierRemover(TransformerMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, threshold: float = 4.0):
         self.threshold = threshold
 
     def fit(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         X = self._validate_data(X)
 
-                                                                 
+
         self.means_ = np.nanmean(X, axis=0)
         self.stds_ = np.nanstd(X, axis=0, ddof=1 if X.shape[0] > 1 else 0)
 
-                                                 
+
         self.stds_ = np.maximum(self.stds_, 1e-6)
 
-                                                           
+
         X_clean = X.copy()
         lower_bounds = self.means_ - self.threshold * self.stds_
         upper_bounds = self.means_ + self.threshold * self.stds_
 
-                                                
+
         lower_mask = X < lower_bounds[np.newaxis, :]
         upper_mask = X > upper_bounds[np.newaxis, :]
         outlier_mask = np.logical_or(lower_mask, upper_mask)
 
-                             
+
         X_clean[outlier_mask] = np.nan
 
-                                                             
+
         self.means_ = np.nanmean(X_clean, axis=0)
         self.stds_ = np.nanstd(X_clean, axis=0, ddof=1 if X.shape[0] > 1 else 0)
 
-                                                 
+
         self.stds_ = np.maximum(self.stds_, 1e-6)
 
-                              
+
         self.lower_bounds_ = self.means_ - self.threshold * self.stds_
         self.upper_bounds_ = self.means_ + self.threshold * self.stds_
 
         return self
 
     def transform(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         check_is_fitted(self)
         X = self._validate_data(X, reset=False)
         X = np.maximum(-np.log1p(np.abs(X)) + self.lower_bounds_, X)
@@ -338,31 +177,7 @@ class OutlierRemover(TransformerMixin, BaseEstimator):
 
 
 class CustomStandardScaler(TransformerMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(self, clip_min: float = -100, clip_max: float = 100, epsilon: float = 1e-6):
         self.clip_min = clip_min
@@ -370,21 +185,7 @@ class CustomStandardScaler(TransformerMixin, BaseEstimator):
         self.epsilon = epsilon
 
     def fit(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         X = self._validate_data(X)
 
         self.mean_ = np.mean(X, axis=0)
@@ -393,18 +194,7 @@ class CustomStandardScaler(TransformerMixin, BaseEstimator):
         return self
 
     def transform(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         check_is_fitted(self)
         X = self._validate_data(X, reset=False)
 
@@ -415,41 +205,7 @@ class CustomStandardScaler(TransformerMixin, BaseEstimator):
 
 
 class RTDLQuantileTransformer(BaseEstimator, TransformerMixin):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -466,25 +222,11 @@ class RTDLQuantileTransformer(BaseEstimator, TransformerMixin):
         self.random_state = random_state
 
     def fit(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
-                                                              
+
+
         n_quantiles = max(min(X.shape[0] // 30, self.n_quantiles), 10)
 
-                                        
+
         normalizer = QuantileTransformer(
             output_distribution=self.output_distribution,
             n_quantiles=n_quantiles,
@@ -492,53 +234,24 @@ class RTDLQuantileTransformer(BaseEstimator, TransformerMixin):
             random_state=self.random_state,
         )
 
-                               
+
         X_modified = self._add_noise(X) if self.noise > 0 else X
 
-                            
+
         normalizer.fit(X_modified)
 
-                               
+
         self.normalizer_ = normalizer
 
         return self
 
     def transform(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         check_is_fitted(self)
         return self.normalizer_.transform(X)
 
     def _add_noise(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         stds = np.std(X, axis=0, keepdims=True)
         noise_std = self.noise / np.maximum(stds, self.noise)
         rng = np.random.default_rng(self.random_state)
@@ -547,38 +260,7 @@ class RTDLQuantileTransformer(BaseEstimator, TransformerMixin):
 
 
 class PreprocessingPipeline(TransformerMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self, normalization_method: str = "power", outlier_threshold: float = 4.0, random_state: Optional[int] = None
@@ -588,28 +270,14 @@ class PreprocessingPipeline(TransformerMixin, BaseEstimator):
         self.random_state = random_state
 
     def fit(self, X, y=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         X = self._validate_data(X)
 
-                                   
+
         self.standard_scaler_ = CustomStandardScaler()
         X_scaled = self.standard_scaler_.fit_transform(X)
 
-                                
+
         if self.normalization_method != "none":
             if self.normalization_method == "power":
                 self.normalizer_ = PowerTransformer(method="yeo-johnson", standardize=True)
@@ -637,69 +305,35 @@ class PreprocessingPipeline(TransformerMixin, BaseEstimator):
             self.normalizer_ = None
             X_normalized = X_scaled
 
-                            
+
         self.outlier_remover_ = OutlierRemover(threshold=self.outlier_threshold)
         self.X_transformed_ = self.outlier_remover_.fit_transform(X_normalized)
 
         return self
 
     def transform(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         check_is_fitted(self)
         X = self._validate_data(X, reset=False, copy=True)
-                          
+
         X = self.standard_scaler_.transform(X)
-                       
+
         if self.normalizer_ is not None:
             try:
-                                                                                                       
+
                 X = self.normalizer_.transform(X)
             except ValueError:
-                                              
+
                 X = np.clip(X, self.X_min_, self.X_max_)
                 X = self.normalizer_.transform(X)
-                         
+
         X = self.outlier_remover_.transform(X)
 
         return X
 
 
 class FeatureShuffler:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -714,55 +348,35 @@ class FeatureShuffler:
         self.random_state = random_state
 
     def shuffle(self, n_estimators: int) -> List[np.ndarray]:
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         self.rng_ = random.Random(self.random_state)
         feature_indices = list(range(self.n_features))
 
-                                                                                
+
         if self.n_features > self.max_features_for_latin and self.method == "latin":
             method = "random"
         else:
             method = self.method
 
-                      
+
         if method == "none" or n_estimators == 1:
             shuffle_patterns = [feature_indices]
 
-                                               
+
         if method == "shift":
-                                          
+
             shuffle_patterns = [feature_indices[-i:] + feature_indices[:-i] for i in range(self.n_features)]
         elif method == "random":
-                                 
+
             if self.n_features <= 5:
                 all_perms = [list(perm) for perm in itertools.permutations(feature_indices)]
                 shuffle_patterns = self.rng_.sample(all_perms, min(n_estimators, len(all_perms)))
             else:
                 shuffle_patterns = [self.rng_.sample(feature_indices, self.n_features) for _ in range(n_estimators)]
         elif method == "latin":
-                                       
-            with RecursionLimitManager(100000):                                                         
+
+            with RecursionLimitManager(100000):
                 shuffle_patterns = self._latin_squares()
         else:
             raise ValueError(f"Unknown method: {method}. Use 'shift', 'random', 'latin', or 'none'.")
@@ -770,13 +384,7 @@ class FeatureShuffler:
         return shuffle_patterns
 
     def _latin_squares(self):
-\
-\
-\
-\
-\
-\
-           
+
 
         def _shuffle_transpose_shuffle(matrix):
             square = deepcopy(matrix)
@@ -806,73 +414,7 @@ class FeatureShuffler:
 
 
 class EnsembleGenerator(TransformerMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -891,26 +433,7 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
         self.random_state = random_state
 
     def fit(self, X, y):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         self._validate_data(X, y)
 
         if self.norm_methods is None:
@@ -921,14 +444,14 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
             else:
                 self.norm_methods_ = self.norm_methods
 
-                                
+
         self.unique_filter_ = UniqueFeatureFilter()
         X = self.unique_filter_.fit_transform(X)
 
         self.X_ = X
         self.y_ = y
 
-                                                                         
+
         self.n_features_in_ = X.shape[1]
         self.n_classes_ = len(np.unique(y))
 
@@ -949,16 +472,7 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
         return self
 
     def _generate_ensemble(self):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         shuffler = FeatureShuffler(
             n_features=self.n_features_in_, method=self.feat_shuffle_method, random_state=self.random_state
@@ -976,7 +490,7 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
         shuffle_shift_norm_configs = list(itertools.product(shuffle_shift_configs, self.norm_methods_))
         shuffle_shift_norm_configs = shuffle_shift_norm_configs[: self.n_estimators]
 
-                                                                                                  
+
         used_methods = list(set([config[1] for config in shuffle_shift_norm_configs]))
 
         ensemble_configs = OrderedDict()
@@ -992,42 +506,23 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
         return ensemble_configs, shuffle_patterns, shift_offsets
 
     def transform(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         check_is_fitted(self, ["ensemble_configs_"])
 
-                                  
+
         X = self.unique_filter_.transform(X)
         y = self.y_
 
         data = OrderedDict()
         for norm_method, shuffle_shift_configs in self.ensemble_configs_.items():
-                                 
+
             preprocessor = self.preprocessors_[norm_method]
             X_variant = np.concatenate(
                 [preprocessor.X_transformed_, preprocessor.transform(X)],
                 axis=0,
             )
-                                                     
+
             X_ensemble = []
             y_ensemble = []
             for shuffle_pattern, shift_offset in shuffle_shift_configs:

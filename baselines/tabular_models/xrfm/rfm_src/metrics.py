@@ -15,7 +15,7 @@ class Metric:
     required_quantities: List[Literal['y_true', 'y_pred', 'y_pred_proba', 'agop', 'topk']]
 
     def __init__(self):
-        assert self.__class__.compute == Metric.compute                            
+        assert self.__class__.compute == Metric.compute
 
     def compute(self, **kwargs) -> float:
         for q in self.required_quantities:
@@ -49,7 +49,7 @@ class Metrics:
         return {m.name: m.compute(**kwargs) for m in self.metrics}
 
 
-                              
+
 
 
 class MSE(Metric):
@@ -107,7 +107,7 @@ class AUC(Metric):
     required_quantities = ['y_true_class', 'y_pred_proba']
 
     def _compute(self, **kwargs) -> float:
-                                                              
+
         probas = kwargs['y_pred_proba'].cpu().numpy()
         if probas.shape[1] == 2:
             probas = probas[:, 1]
@@ -124,7 +124,7 @@ class F1(Metric):
     def _compute(self, **kwargs) -> float:
         y_pred_proba = kwargs['y_pred_proba']
         n_classes = y_pred_proba.shape[-1]
-                                                              
+
         return sklearn.metrics.f1_score(kwargs['y_true_class'].cpu().numpy(),
                                         y_pred_proba.argmax(dim=-1).cpu().numpy(),
                                         average='binary' if n_classes == 2 else 'macro')
@@ -138,7 +138,7 @@ class Logloss(Metric):
     required_quantities = ['y_true_class', 'y_pred_proba']
 
     def _compute(self, **kwargs) -> float:
-                                                                                                                
+
         return log_loss(kwargs['y_true_class'].cpu().numpy(), kwargs['y_pred_proba'].cpu().numpy(),
                         labels=list(range(kwargs['y_pred_proba'].shape[-1])))
 
@@ -158,7 +158,7 @@ class TopAGOPVectorAUC(Metric):
         top_eigenvector = U[:, 0]
         projections = kwargs['samples'] @ top_eigenvector
         projections = projections.reshape(y_true_class.shape)
-                                          
+
         plus_auc = roc_auc_score(y_true_class.cpu().numpy(), torch.sigmoid(projections).cpu().numpy())
         minus_auc = roc_auc_score(y_true_class.cpu().numpy(), torch.sigmoid(-projections).cpu().numpy())
         return max(plus_auc, minus_auc)
@@ -180,7 +180,7 @@ class TopAGOPVectorPearsonR(Metric):
         projections = kwargs['samples'] @ top_eigenvector
 
         projections = projections.reshape(-1, 1)
-        targets = y_true_class.float().reshape(-1, 1)          
+        targets = y_true_class.float().reshape(-1, 1)
         return torch.abs(torch.corrcoef(torch.cat((projections, targets), dim=-1).T))[0, 1].item()
 
 

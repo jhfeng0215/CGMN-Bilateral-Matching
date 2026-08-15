@@ -10,15 +10,10 @@ def _init_scaling_by_sections(
     distribution: Literal['normal', 'random-signs'],
     init_sections: list[int],
 ) -> None:
-\
-\
-\
-\
-\
-       
+
     assert weight.ndim == 2
-                         
-                          
+
+
     assert weight.shape[1] == sum(init_sections)
 
     if distribution == 'normal':

@@ -20,7 +20,7 @@ from sklearn.utils import column_or_1d
 
 from TALENT.model.lib.tabpfn.utils import CustomUnpickler
 from TALENT.model.lib.tabpfn.utils import load_model_workflow, get_params_from_config, transformer_predict
-                                             
+
 
 
 class TabPFNClassifier(BaseEstimator, ClassifierMixin):
@@ -28,55 +28,23 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
     models_in_memory = {}
 
     def __init__(
-        self, 
+        self,
         device = 'cpu',
-        base_path = pathlib.Path(__file__).parent.resolve(), 
+        base_path = pathlib.Path(__file__).parent.resolve(),
         model_string = '',
-        N_ensemble_configurations = 32, 
-        no_preprocess_mode = False, 
+        N_ensemble_configurations = 32,
+        no_preprocess_mode = False,
         multiclass_decoder = 'permutation',
-        feature_shift_decoder = True, 
-        only_inference = True, 
-        seed = 0, 
-        no_grad = True, 
+        feature_shift_decoder = True,
+        only_inference = True,
+        seed = 0,
+        no_grad = True,
         batch_size_inference = 8,
         subsample_features = False,
     ):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
 
-                                                      
+
+
         i = 0
         model_key = model_string+'|'+str(device)
         if model_key in self.models_in_memory:
@@ -87,7 +55,7 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
             self.models_in_memory[model_key] = (model, c, results_file)
             if len(self.models_in_memory) == 2:
                 print('Multiple models in memory. This might lead to memory issues. Consider calling remove_models_from_memory()')
-                                                                        
+
 
         self.device = device
         self.model = model
@@ -141,18 +109,11 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
         return np.asarray(y, dtype=np.float64, order="C")
 
     def fit(self, X, y, overwrite_warning=False):
-\
-\
-\
-\
-\
-\
-\
-           
+
         if self.no_grad:
-                                                   
+
             X, y = check_X_y(X, y, force_all_finite=False)
-                                           
+
         y = self._validate_targets(y)
         self.label_encoder = LabelEncoder()
         y = self.label_encoder.fit_transform(y)
@@ -171,20 +132,15 @@ class TabPFNClassifier(BaseEstimator, ClassifierMixin):
             raise ValueError("⚠️ WARNING: TabPFN is not made for datasets with a trainingsize > 1024. Prediction might take a while, be less reliable. We advise not to run datasets > 10k samples, which might lead to your machine crashing (due to quadratic memory scaling of TabPFN). Please confirm you want to run by passing overwrite_warning=True to the fit function.")
 
 
-                               
+
         return self
 
     def predict_proba(self, X, normalize_with_test=False, return_logits=False):
-\
-\
-\
-\
-\
-           
-                                      
+
+
         check_is_fitted(self)
 
-                          
+
         if self.no_grad:
             X = check_array(X, force_all_finite=False)
             X_full = np.concatenate([self.X_, X], axis=0)

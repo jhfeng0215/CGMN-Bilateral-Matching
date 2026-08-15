@@ -13,14 +13,10 @@ THIS_PATH = os.path.dirname(__file__)
 
 
 def mkdir(path):
-\
-\
-\
-\
-       
+
     try:
         os.makedirs(path)
-    except OSError as exc:               
+    except OSError as exc:
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
@@ -28,22 +24,13 @@ def mkdir(path):
 
 
 def set_gpu(x):
-\
-\
-\
-\
-       
+
     os.environ['CUDA_VISIBLE_DEVICES'] = x
     print('using gpu:', x)
 
 
 def ensure_path(path, remove=True):
-\
-\
-\
-\
-\
-       
+
     if os.path.exists(path):
         if remove:
             if input('{} exists, remove? ([y]/n)'.format(path)) != 'n':
@@ -53,22 +40,16 @@ def ensure_path(path, remove=True):
         os.mkdir(path)
 
 
-                          
+
 class Averager():
-\
-\
-\
-       
+
 
     def __init__(self):
         self.n = 0
         self.v = 0
 
     def add(self, x):
-\
-\
-\
-           
+
         self.v = (self.v * self.n + x) / (self.n + 1)
         self.n += 1
 
@@ -82,11 +63,7 @@ class Timer():
         self.o = time.time()
 
     def measure(self, p=1):
-\
-\
-\
-\
-           
+
 
         x = (time.time() - self.o) / p
         x = int(x)
@@ -104,14 +81,9 @@ def pprint(x):
     _utils_pp.pprint(x)
 
 
-                                        
+
 def set_seeds(base_seed: int, one_cuda_seed: bool = False) -> None:
-\
-\
-\
-\
-\
-       
+
     assert 0 <= base_seed < 2 ** 32 - 10000
     random.seed(base_seed)
     np.random.seed(base_seed + 1)
@@ -120,11 +92,11 @@ def set_seeds(base_seed: int, one_cuda_seed: bool = False) -> None:
     if one_cuda_seed:
         torch.cuda.manual_seed_all(cuda_seed)
     elif torch.cuda.is_available():
-                                                                                     
-                                                                             
+
+
         if not torch.cuda.is_initialized():
             torch.cuda.init()
-                                                                                                                            
+
         for i in range(torch.cuda.device_count()):
             default_generator = torch.cuda.default_generators[i]
             default_generator.manual_seed(cuda_seed + i)
@@ -138,28 +110,15 @@ import sklearn.metrics as skm
 
 
 def rmse(y, prediction, y_info):
-\
-\
-\
-\
-\
-\
-       
-    rmse = skm.mean_squared_error(y, prediction) ** 0.5                      
+
+    rmse = skm.mean_squared_error(y, prediction) ** 0.5
     if y_info['policy'] == 'mean_std':
         rmse *= y_info['std']
     return rmse
 
 
 def load_config(args, config=None, config_name=None):
-\
-\
-\
-\
-\
-\
-\
-       
+
     if config is None:
         config_path = os.path.join(os.path.abspath(os.path.join(THIS_PATH, '..')),
                                    'configs', args.dataset,
@@ -167,10 +126,10 @@ def load_config(args, config=None, config_name=None):
         with open(config_path, 'r') as fp:
             config = json.load(fp)
 
-                               
+
     args.config = config
 
-                           
+
     with open(os.path.join(args.save_path,
                            '{}.json'.format('config' if config_name is None else config_name)), 'w') as fp:
         args_dict = vars(args)
@@ -181,16 +140,9 @@ def load_config(args, config=None, config_name=None):
     return args
 
 
-                  
+
 def sample_parameters(trial, space, base_config):
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def get_distribution(distribution_name):
         return getattr(trial, f'suggest_{distribution_name}')
@@ -214,7 +166,7 @@ def sample_parameters(trial, space, base_config):
             elif distribution == '$mlp_d_layers':
                 min_n_layers, max_n_layers, d_min, d_max = args
                 n_layers = trial.suggest_int('n_layers', min_n_layers, max_n_layers)
-                suggest_dim = lambda name: trial.suggest_int(name, d_min, d_max)        
+                suggest_dim = lambda name: trial.suggest_int(name, d_min, d_max)
                 d_first = [suggest_dim('d_first')] if n_layers else []
                 d_middle = (
                     [suggest_dim('d_middle')] * (n_layers - 2) if n_layers > 2 else []
@@ -231,7 +183,7 @@ def sample_parameters(trial, space, base_config):
 
                 for x in args:
                     assert x % n_heads == 0
-                result[label] = trial.suggest_int('d_token', *args, n_heads)                      
+                result[label] = trial.suggest_int('d_token', *args, n_heads)
 
             elif distribution in ['$d_ffn_factor', '$d_hidden_factor']:
                 if base_config['model']['activation'].endswith('glu'):
@@ -244,26 +196,17 @@ def sample_parameters(trial, space, base_config):
 
 
 def merge_sampled_parameters(config, sampled_parameters):
-\
-\
-\
-\
-\
-       
+
     for k, v in sampled_parameters.items():
         if isinstance(v, dict):
             merge_sampled_parameters(config.setdefault(k, {}), v)
         else:
-                                                                                                            
+
             config[k] = v
 
 
 def get_classical_args():
-\
-\
-\
-\
-       
+
 
     import argparse
     import warnings
@@ -274,16 +217,16 @@ def get_classical_args():
         default_args = json.load(f)
 
     parser = argparse.ArgumentParser()
-                      
+
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
     parser.add_argument('--model_type', type=str,
                         default=default_args['model_type'],
-                        choices=['dummy', 'LogReg', 'LinearRegression', 
+                        choices=['dummy', 'LogReg', 'LinearRegression',
                                  'xgboost', 'catboost', 'lightgbm', 'RandomForest',
                                  'svm', 'knn', 'NCM', 'NaiveBayes', 'rfm', 'xrfm',
                                  ])
 
-                              
+
     parser.add_argument('--normalization', type=str, default=default_args['normalization'],
                         choices=['none', 'standard', 'minmax', 'quantile', 'maxabs', 'power', 'robust'])
     parser.add_argument('--num_nan_policy', type=str, default=default_args['num_nan_policy'],
@@ -298,7 +241,7 @@ def get_classical_args():
     parser.add_argument('--n_bins', type=int, default=default_args['n_bins'])
     parser.add_argument('--cat_min_frequency', type=float, default=default_args['cat_min_frequency'])
 
-                   
+
     parser.add_argument('--n_trials', type=int, default=default_args['n_trials'])
     parser.add_argument('--seed_num', type=int, default=default_args['seed_num'])
     parser.add_argument('--gpu', default=default_args['gpu'])
@@ -325,7 +268,7 @@ def get_classical_args():
     args.save_path = osp.join(args.model_path, save_path)
     mkdir(args.save_path)
 
-                            
+
     args.seed = 0
 
     with pkg_resources.files(TALENT).joinpath("configs/default", args.model_type + '.json').open("r") as f:
@@ -345,11 +288,7 @@ def get_classical_args():
 
 
 def get_deep_args():
-\
-\
-\
-\
-       
+
     import argparse
     import warnings
     warnings.filterwarnings("ignore")
@@ -363,18 +302,18 @@ def get_deep_args():
         default_args = json.load(f)
     parser.add_argument('--dataset', type=str, default=default_args['dataset'])
     parser.add_argument('--model_type', type=str, default=default_args['model_type'],
-                        choices=['mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr', 
-                                 'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos', 
-                                 'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr', 
+                        choices=['mlp', 'resnet', 'autoint', 'snn', 'ftt', 'dcn2', 'tabr',
+                                 'modernNCA', 'tabnet', 'node', 'tabcaps', 'saint', 'tangos',
+                                 'ptarl', 'danets', 'tabtransformer', 'grownet', 'dnnr',
                                  'switchtab', 'bishop', 'protogate', 'realmlp', 'mlp_plr',
-                                 'excelformer', 'grande', 'amformer', 'trompt', 'tabm', 
-                                 't2gformer', 'tabautopnpnet', 
-                                 
-                                 'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm', 
-                                 'tabicl', 'mitra', 'limix', 
+                                 'excelformer', 'grande', 'amformer', 'trompt', 'tabm',
+                                 't2gformer', 'tabautopnpnet',
+
+                                 'tabpfn', 'tabpfn_v2', 'tabpfn_real', 'hyperfast', 'tabptm',
+                                 'tabicl', 'mitra', 'limix',
                                  ])
 
-                             
+
     parser.add_argument('--max_epoch', type=int, default=default_args['max_epoch'])
     parser.add_argument('--batch_size', type=int, default=default_args['batch_size'])
     parser.add_argument('--normalization', type=str, default=default_args['normalization'],
@@ -392,7 +331,7 @@ def get_deep_args():
     parser.add_argument('--n_bins', type=int, default=default_args['n_bins'])
     parser.add_argument('--cat_min_frequency', type=float, default=default_args['cat_min_frequency'])
 
-                   
+
     parser.add_argument('--n_trials', type=int, default=default_args['n_trials'])
     parser.add_argument('--seed_num', type=int, default=default_args['seed_num'])
     parser.add_argument('--workers', type=int, default=default_args['workers'])
@@ -423,7 +362,7 @@ def get_deep_args():
     args.save_path = osp.join(args.model_path, save_path)
     mkdir(args.save_path)
 
-                            
+
     with pkg_resources.files(TALENT).joinpath("configs/default", args.model_type + '.json').open("r") as f:
         default_para = json.load(f)
 
@@ -442,15 +381,7 @@ def get_deep_args():
 
 
 def show_results_classical(args, info, metric_name, results_list, time_list):
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     metric_arrays = {name: [] for name in metric_name}
 
     for result in results_list:
@@ -463,7 +394,7 @@ def show_results_classical(args, info, metric_name, results_list, time_list):
     mean_metrics = {name: np.mean(metric_arrays[name]) for name in metric_name}
     std_metrics = {name: np.std(metric_arrays[name]) for name in metric_name}
 
-                      
+
     print(f'{args.model_type}: {args.seed_num} Trials')
     for name in metric_name:
         if info['task_type'] == 'regression' and name != 'Time':
@@ -491,16 +422,7 @@ def show_results_classical(args, info, metric_name, results_list, time_list):
 
 
 def show_results(args, info, metric_name, loss_list, results_list, time_list):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     metric_arrays = {name: [] for name in metric_name}
 
     for result in results_list:
@@ -518,7 +440,7 @@ def show_results(args, info, metric_name, loss_list, results_list, time_list):
     std_metrics = {name: np.std(metric_arrays[name]) for name in metric_name}
     mean_loss = np.mean(np.array(loss_list))
 
-                      
+
     print(f'{args.model_type}: {args.seed_num} Trials')
     for name in metric_name:
         if info['task_type'] == 'regression' and name != 'Time':
@@ -548,15 +470,7 @@ def show_results(args, info, metric_name, loss_list, results_list, time_list):
 
 
 def tune_hyper_parameters(args, opt_space, train_val_data, info):
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     import optuna
     import optuna.samplers
     import optuna.trial
@@ -688,13 +602,13 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
 
         if config.get('config_type') == 'trv4':
             if config['model']['activation'].endswith('glu'):
-                                                                                           
-                                                       
+
+
                 config['model']['d_ffn_factor'] *= 2 / 3
 
         trial_configs.append(config)
-                                                                       
-                              
+
+
         try:
             method.fit(train_val_data, info, train=True, config=config)
             return method.trlog['best_res']
@@ -706,7 +620,7 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
         with open(osp.join(args.save_path, '{}-tuned.json'.format(args.model_type)), 'rb') as fp:
             args.config = json.load(fp)
     else:
-                           
+
         if info['task_type'] == 'regression':
             direction = 'minimize'
             for key in opt_space[args.model_type]['model'].keys():
@@ -728,9 +642,9 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
             **{'n_trials': args.n_trials},
             show_progress_bar=True,
         )
-                          
+
         best_trial_id = study.best_trial.number
-                                     
+
         print('Best Hyper-Parameters')
         print(trial_configs[best_trial_id])
         args.config = trial_configs[best_trial_id]
@@ -740,15 +654,10 @@ def tune_hyper_parameters(args, opt_space, train_val_data, info):
 
 
 def get_method(model):
-\
-\
-\
-\
-\
-       
-    
-                  
-    
+
+
+
+
     if model == "mlp":
         from TALENT.model.methods.mlp import MLPMethod
         return MLPMethod
@@ -839,9 +748,9 @@ def get_method(model):
     elif model == 'tabautopnpnet':
         from TALENT.model.methods.tabautopnpnet import TabAutoPNPNetMethod
         return TabAutoPNPNetMethod
-    
-                       
-    
+
+
+
     elif model == 'dummy':
         from TALENT.model.classical_methods.dummy import DummyMethod
         return DummyMethod
@@ -882,8 +791,8 @@ def get_method(model):
         from TALENT.model.classical_methods.xrfm import XRFMMethod
         return XRFMMethod
 
-                     
-    
+
+
     elif model == 'tabpfn':
         from TALENT.model.methods.tabpfn import TabPFNMethod
         return TabPFNMethod
@@ -908,6 +817,6 @@ def get_method(model):
     elif model == 'limix':
         from TALENT.model.methods.limix import LimiXMethod
         return LimiXMethod
-    
+
     else:
         raise NotImplementedError("Model \"" + model + "\" not yet implemented")

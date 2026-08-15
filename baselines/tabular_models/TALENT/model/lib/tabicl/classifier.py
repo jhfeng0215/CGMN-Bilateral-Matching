@@ -24,157 +24,7 @@ OLD_SKLEARN = version.parse(sklearn.__version__) < version.parse("1.6")
 
 
 class TabICLClassifier(ClassifierMixin, BaseEstimator):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     def __init__(
         self,
@@ -217,7 +67,7 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
         self.inference_config = inference_config
 
     def _more_tags(self):
-                                                                                   
+
         return dict(non_deterministic=True)
 
     def __sklearn_tags__(self):
@@ -226,23 +76,7 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
         return tags
 
     def _load_model(self):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         repo_id = "jingang/TabICL-clf"
         filename = self.checkpoint_version
@@ -275,7 +109,7 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
             )
 
         if self.model_path is None:
-                                                                                                                 
+
             from huggingface_hub import hf_hub_download
             from huggingface_hub.utils import LocalEntryNotFoundError
             try:
@@ -293,13 +127,13 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
             if model_path_:
                 checkpoint = torch.load(model_path_, map_location="cpu", weights_only=True)
         else:
-                                                    
+
             model_path_ = Path(self.model_path) if isinstance(self.model_path, str) else self.model_path
             if model_path_.exists():
-                                                                      
+
                 checkpoint = torch.load(model_path_, map_location="cpu", weights_only=True)
             else:
-                                                                                                          
+
                 from huggingface_hub import hf_hub_download
                 if self.allow_auto_download:
                     print(info_message)
@@ -327,39 +161,10 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
         self.model_.eval()
 
     def fit(self, X, y):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         if OLD_SKLEARN:
-                                                                          
+
             X, y = self._validate_data(X, y, dtype=None, cast_to_ndarray=False)
         else:
             X, y = self._validate_data(X, y, dtype=None, skip_check_array=True)
@@ -373,32 +178,32 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
         else:
             self.device_ = self.device
 
-                                           
+
         self._load_model()
         self.model_.to(self.device_)
 
-                                 
+
         init_config = {
             "COL_CONFIG": {"device": self.device_, "use_amp": self.use_amp, "verbose": self.verbose},
             "ROW_CONFIG": {"device": self.device_, "use_amp": self.use_amp, "verbose": self.verbose},
             "ICL_CONFIG": {"device": self.device_, "use_amp": self.use_amp, "verbose": self.verbose},
         }
-                                                      
+
         if self.inference_config is None:
             self.inference_config_ = InferenceConfig()
             self.inference_config_.update_from_dict(init_config)
-                                          
+
         elif isinstance(self.inference_config, dict):
             self.inference_config_ = InferenceConfig()
             for key, value in self.inference_config.items():
                 if key in init_config:
                     init_config[key].update(value)
             self.inference_config_.update_from_dict(init_config)
-                                       
+
         else:
             self.inference_config_ = self.inference_config
 
-                             
+
         self.y_encoder_ = LabelEncoder()
         y = self.y_encoder_.fit_transform(y)
         self.classes_ = self.y_encoder_.classes_
@@ -416,11 +221,11 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
                 f"natively supported by the model. Therefore, hierarchical classification is used."
             )
 
-                                   
+
         self.X_encoder_ = TransformToNumerical(verbose=self.verbose)
         X = self.X_encoder_.fit_transform(X)
 
-                                                                 
+
         self.ensemble_generator_ = EnsembleGenerator(
             n_estimators=self.n_estimators,
             norm_methods=self.norm_methods or ["none", "power"],
@@ -434,31 +239,7 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
         return self
 
     def _batch_forward(self, Xs, ys, shuffle_patterns=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
 
         batch_size = self.batch_size or Xs.shape[0]
         n_batches = np.ceil(Xs.shape[0] / batch_size)
@@ -490,29 +271,10 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
         return np.concatenate(outputs, axis=0)
 
     def predict_proba(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         check_is_fitted(self)
         if isinstance(X, np.ndarray) and len(X.shape) == 1:
-                                                                
+
             raise ValueError(f"The provided input X is one-dimensional. Reshape your data.")
 
         if self.n_jobs is not None:
@@ -535,9 +297,9 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
 
             torch.set_num_threads(n_threads)
 
-                                                                                                          
+
         if OLD_SKLEARN:
-                                                                          
+
             X = self._validate_data(X, reset=False, dtype=None, cast_to_ndarray=False)
         else:
             X = self._validate_data(X, reset=False, dtype=None, skip_check_array=True)
@@ -551,20 +313,20 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
             outputs.append(self._batch_forward(Xs, ys, shuffle_patterns))
         outputs = np.concatenate(outputs, axis=0)
 
-                                                             
+
         class_shift_offsets = []
         for offsets in self.ensemble_generator_.class_shift_offsets_.values():
             class_shift_offsets.extend(offsets)
 
-                                                     
-                                                                                       
+
+
         n_estimators = len(class_shift_offsets)
 
-                                                                                      
+
         avg = None
         for i, offset in enumerate(class_shift_offsets):
             out = outputs[i]
-                                     
+
             out = np.concatenate([out[..., offset:], out[..., :offset]], axis=-1)
 
             if avg is None:
@@ -572,35 +334,21 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
             else:
                 avg += out
 
-                                    
+
         avg /= n_estimators
 
-                                                     
+
         if self.average_logits:
             avg = self.softmax(avg, axis=-1, temperature=self.softmax_temperature)
 
         if self.n_jobs is not None:
             torch.set_num_threads(old_n_threads)
 
-                                             
+
         return avg / avg.sum(axis=1, keepdims=True)
 
     def predict(self, X):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         proba = self.predict_proba(X)
         y = np.argmax(proba, axis=1)
 
@@ -608,27 +356,10 @@ class TabICLClassifier(ClassifierMixin, BaseEstimator):
 
     @staticmethod
     def softmax(x, axis: int = -1, temperature: float = 0.9):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         x = x / temperature
-                                              
+
         x_max = np.max(x, axis=axis, keepdims=True)
         e_x = np.exp(x - x_max)
-                         
+
         return e_x / np.sum(e_x, axis=axis, keepdims=True)

@@ -57,36 +57,22 @@ class Dataset:
         return self.n_num_features + self.n_cat_features
 
     def size(self, part: str) -> int:
-\
-\
-\
-\
-\
-\
-\
-\
-           
+
         X = self.N if self.N is not None else self.C
         assert(X is not None)
         return len(X[part])
 
-                                       
+
 DATA_PATH = ''
 
 def dataname_to_numpy(dataset_name, dataset_path):
 
-\
-\
-\
-\
-\
-\
-       
+
     dir_ = Path(os.path.join(DATA_PATH, dataset_path, dataset_name))
 
     def load(item) -> ArrayDict:
         return {
-            x: ty.cast(np.ndarray, np.load(dir_ / f'{item}_{x}.npy', allow_pickle = True))  
+            x: ty.cast(np.ndarray, np.load(dir_ / f'{item}_{x}.npy', allow_pickle = True))
             for x in ['train', 'val', 'test']
         }
 
@@ -98,13 +84,7 @@ def dataname_to_numpy(dataset_name, dataset_path):
     )
 
 def get_dataset(dataset_name, dataset_path):
-\
-\
-\
-\
-\
-\
-       
+
     N, C, y, info = dataname_to_numpy(dataset_name, dataset_path)
     N_trainval = None if N is None else {key: N[key] for key in ["train", "val"]} if "train" in N and "val" in N else None
     N_test = None if N is None else {key: N[key] for key in ["test"]} if "test" in N else None
@@ -113,26 +93,15 @@ def get_dataset(dataset_name, dataset_path):
     C_test = None if C is None else {key: C[key] for key in ["test"]} if "test" in C else None
 
     y_trainval = {key: y[key] for key in ["train", "val"]}
-    y_test = {key: y[key] for key in ["test"]} 
-    
-                           
+    y_test = {key: y[key] for key in ["test"]}
+
+
     train_val_data = (N_trainval,C_trainval,y_trainval)
     test_data = (N_test,C_test,y_test)
     return train_val_data,test_data,info
 
 def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_value = None, imputer = None, cat_new_value = None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     if N_data is None:
         N = None
     else:
@@ -144,7 +113,7 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
             if N['test'].ndim == 1:
                 N = {k: v.reshape(-1, 1) for k, v in N.items()}
         N = {k: v.astype(float) for k,v in N.items()}
-        
+
         num_nan_masks = {k: np.isnan(v) for k, v in N.items()}
         if num_new_value is None:
             if num_nan_policy == 'mean':
@@ -153,14 +122,14 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
                 num_new_value = np.nanmedian(N['train'], axis=0)
             else:
                 raise_unknown('numerical NaN policy', num_nan_policy)
-            if np.isnan(num_new_value).any():                               
+            if np.isnan(num_new_value).any():
                 num_new_value = np.nan_to_num(num_new_value)
 
         if any(x.any() for x in num_nan_masks.values()):
             for k, v in N.items():
                 num_nan_indices = np.where(num_nan_masks[k])
                 v[num_nan_indices] = np.take(num_new_value, num_nan_indices[1])
-        
+
     if C_data is None:
         C = None
     else:
@@ -173,8 +142,8 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
             if C['test'].ndim == 1:
                 C = {k: v.reshape(-1, 1) for k, v in C.items()}
         C = {k: v.astype(str) for k,v in C.items()}
-        
-                                      
+
+
         cat_nan_masks = {k: np.isnan(v) if np.issubdtype(v.dtype, np.number) else np.isin(v, ['nan', 'NaN', '', None]) for k, v in C.items()}
         if cat_nan_policy == 'new':
             if cat_new_value is None:
@@ -183,11 +152,11 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
         elif cat_nan_policy == 'most_frequent':
             if imputer is None:
                 cat_new_value = None
-                imputer = SimpleImputer(strategy='most_frequent') 
+                imputer = SimpleImputer(strategy='most_frequent')
                 imputer.fit(C['train'])
         else:
             raise_unknown('categorical NaN policy', cat_nan_policy)
-        
+
         if any(x.any() for x in cat_nan_masks.values()):
             if imputer:
                 C = {k: imputer.transform(v) for k, v in C.items()}
@@ -195,27 +164,17 @@ def data_nan_process(N_data, C_data, num_nan_policy, cat_nan_policy, num_new_val
                 for k, v in C.items():
                     cat_nan_indices = np.where(cat_nan_masks[k])
                     v[cat_nan_indices] = cat_new_value
-        
+
     result = (N, C, num_new_value, imputer, cat_new_value)
     return result
 
 def num_enc_process(N_data,num_policy,n_bins=2,y_train=None,is_regression=False,encoder=None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     from TALENT.model.lib.num_embeddings import compute_bins,PiecewiseLinearEncoding,UnaryEncoding,JohnsonEncoding,BinsEncoding
     if N_data is not None:
         if num_policy == 'none':
             return N_data,None
-        
+
         elif num_policy == 'Q_PLE':
             for item in N_data:
                 N_data[item] = torch.from_numpy(N_data[item])
@@ -250,7 +209,7 @@ def num_enc_process(N_data,num_policy,n_bins=2,y_train=None,is_regression=False,
                 bins = compute_bins(N_data['train'],n_bins = n_bins,tree_kwargs = tree_kwargs,y=torch.from_numpy(y_train),regression=is_regression)
                 encoder = UnaryEncoding(bins)
             for item in N_data:
-                N_data[item] = encoder(N_data[item]).cpu().numpy()    
+                N_data[item] = encoder(N_data[item]).cpu().numpy()
         elif num_policy == 'Q_bins':
             for item in N_data:
                 N_data[item] = torch.from_numpy(N_data[item])
@@ -267,7 +226,7 @@ def num_enc_process(N_data,num_policy,n_bins=2,y_train=None,is_regression=False,
                 bins = compute_bins(N_data['train'],n_bins = n_bins,tree_kwargs = tree_kwargs,y=torch.from_numpy(y_train),regression=is_regression)
                 encoder = BinsEncoding(bins)
             for item in N_data:
-                N_data[item] = encoder(N_data[item]).cpu().numpy()  
+                N_data[item] = encoder(N_data[item]).cpu().numpy()
         elif num_policy == 'Q_Johnson':
             for item in N_data:
                 N_data[item] = torch.from_numpy(N_data[item])
@@ -284,38 +243,27 @@ def num_enc_process(N_data,num_policy,n_bins=2,y_train=None,is_regression=False,
                 bins = compute_bins(N_data['train'],n_bins = n_bins,tree_kwargs = tree_kwargs,y=torch.from_numpy(y_train),regression=is_regression)
                 encoder = JohnsonEncoding(bins)
             for item in N_data:
-                N_data[item] = encoder(N_data[item]).cpu().numpy()            
-        
+                N_data[item] = encoder(N_data[item]).cpu().numpy()
+
         return N_data,encoder
     else:
         return N_data,None
 
 
 def data_enc_process(N_data, C_data, cat_policy, y_train = None, ord_encoder = None, mode_values = None, cat_encoder = None):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
 
     if C_data is not None:
         unknown_value = np.iinfo('int64').max - 3
         if ord_encoder is None:
             ord_encoder = sklearn.preprocessing.OrdinalEncoder(
-                handle_unknown='use_encoded_value',  
-                unknown_value=unknown_value, 
-                dtype='int64', 
+                handle_unknown='use_encoded_value',
+                unknown_value=unknown_value,
+                dtype='int64',
             ).fit(C_data['train'])
         C_data = {k: ord_encoder.transform(v) for k, v in C_data.items()}
 
-                                                                                               
+
         if mode_values is not None:
             assert('test' in C_data.keys())
             for column_idx in range(C_data['test'].shape[1]):
@@ -330,7 +278,7 @@ def data_enc_process(N_data, C_data, cat_policy, y_train = None, ord_encoder = N
         if cat_policy == 'indices':
             result = (N_data, C_data)
             return result[0], result[1], ord_encoder, mode_values, cat_encoder
-                                                                               
+
         elif cat_policy == 'ordinal':
             cat_encoder = ord_encoder
         elif cat_policy == 'ohe':
@@ -385,15 +333,7 @@ def data_enc_process(N_data, C_data, cat_policy, y_train = None, ord_encoder = N
         return N_data, C_data, None, None, None
 
 def data_norm_process(N_data, normalization, seed, normalizer = None):
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     if N_data is None or normalization == 'none':
         return N_data, None
 
@@ -419,21 +359,13 @@ def data_norm_process(N_data, normalization, seed, normalizer = None):
         else:
             raise_unknown('normalization', normalization)
         normalizer.fit(N_data_train)
-   
-    result = {k: normalizer.transform(v) for k, v in N_data.items()} 
+
+    result = {k: normalizer.transform(v) for k, v in N_data.items()}
     return result, normalizer
 
 def data_label_process(y_data, is_regression, info = None, encoder = None):
-\
-\
-\
-\
-\
-\
-\
-\
-       
-    y = deepcopy(y_data)        
+
+    y = deepcopy(y_data)
     if is_regression:
         y = {k: v.astype(float) for k,v in y.items()}
         if info is None:
@@ -444,7 +376,7 @@ def data_label_process(y_data, is_regression, info = None, encoder = None):
         info = {'policy': 'mean_std', 'mean': mean, 'std': std}
         return y, info, None
     else:
-                        
+
         if encoder is None:
             encoder = sklearn.preprocessing.LabelEncoder().fit(y['train'])
         y = {k:encoder.transform(v) for k, v in y.items()}
@@ -462,18 +394,7 @@ def mse_safe_broadcast(input, target) -> torch.Tensor:
 
 
 def data_loader_process(is_regression, X, Y, y_info, device, batch_size, is_train,is_float = False):
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-\
-       
+
     X = tuple(None if x is None else to_tensors(x) for x in X)
     Y = to_tensors(Y)
 
@@ -493,7 +414,7 @@ def data_loader_process(is_regression, X, Y, y_info, device, batch_size, is_trai
             Y = {k: v.double() for k, v in Y.items()}
     else:
         Y = {k: v.long() for k, v in Y.items()}
-    
+
     loss_fn = (
         mse_safe_broadcast
         if is_regression
@@ -503,35 +424,25 @@ def data_loader_process(is_regression, X, Y, y_info, device, batch_size, is_trai
     if is_train:
         trainset = TData(is_regression, X, Y, y_info, 'train')
         valset = TData(is_regression, X, Y, y_info, 'val')
-        train_loader = DataLoader(dataset=trainset, batch_size=batch_size, shuffle=True, num_workers=0)        
-        val_loader = DataLoader(dataset=valset, batch_size=batch_size, shuffle=False, num_workers=0) 
+        train_loader = DataLoader(dataset=trainset, batch_size=batch_size, shuffle=True, num_workers=0)
+        val_loader = DataLoader(dataset=valset, batch_size=batch_size, shuffle=False, num_workers=0)
         return X[0], X[1], Y, train_loader, val_loader, loss_fn
     else:
         testset = TData(is_regression, X, Y, y_info, 'test')
-        test_loader = DataLoader(dataset=testset, batch_size=batch_size, shuffle=False, num_workers=0)        
+        test_loader = DataLoader(dataset=testset, batch_size=batch_size, shuffle=False, num_workers=0)
         return X[0], X[1], Y, test_loader, loss_fn
 
 
-    
+
 
 def to_tensors(data: ArrayDict) -> ty.Dict[str, torch.Tensor]:
-\
-\
-\
-\
-\
-       
+
     return {k: torch.as_tensor(v) for k, v in data.items()}
 
 def get_categories(
     X_cat: ty.Optional[ty.Dict[str, torch.Tensor]]
 ) -> ty.Optional[ty.List[int]]:
-\
-\
-\
-\
-\
-       
+
     return (
         None
         if X_cat is None
